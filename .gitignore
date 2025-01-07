@@ -1,0 +1,5 @@
+/backup
+
+*.Zone.Identifier
+
+node_modules
