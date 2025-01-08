@@ -34,7 +34,7 @@ export default function Header() {
     <header className="bg-gradient-to-r from-teal-400 to-teal-500 text-white shadow-lg">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold tracking-tight hover:text-teal-100 transition-colors">
-          SecondhandBooks
+        Thriftbooks
         </Link>
         <nav className="hidden md:flex space-x-1">
           {navItems.map((item) => (

@@ -8,7 +8,7 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">About Us</h3>
             <p className="text-sm text-teal-100">
-              SecondhandBooks is your go-to platform for buying and selling used books online.
+            Thriftbooks is your go-to platform for buying and selling used books online.
             </p>
           </div>
           <div>
@@ -30,7 +30,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-teal-400 text-center text-sm text-teal-100">
-          <p>&copy; 2023 SecondhandBooks. All rights reserved.</p>
+          <p>&copy; 2023 Thriftbooks. All rights reserved.</p>
         </div>
       </div>
     </footer>
