@@ -1,88 +1,84 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/components/ui/use-toast'
-import { db } from '@/config/firebase' // Import Firebase Firestore instance
-import { collection, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore'
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { db, auth } from '@/config/firebase';
+import { collection, getDocs, updateDoc, deleteDoc, doc, getDoc } from 'firebase/firestore';
 
 export default function AdminDashboardPage() {
-  const [sellerApplications, setSellerApplications] = useState<any[]>([])
-  const [users, setUsers] = useState<any[]>([])
-  const [products, setProducts] = useState<any[]>([])
-  const [feedback, setFeedback] = useState<any[]>([])
-  const { toast } = useToast()
+  const [sellerApplications, setSellerApplications] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [feedback, setFeedback] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const { toast } = useToast();
 
-  // Fetch seller applications (users with role "seller" and status "Pending")
-  const fetchSellerApplications = async () => {
-    const querySnapshot = await getDocs(collection(db, 'users'))
-    const applications = querySnapshot.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter((user: any) => user.role === 'seller')
-    setSellerApplications(applications)
-  }
+  // Fetch all necessary data
+  const fetchData = async () => {
+    try {
+      const [usersSnapshot, productsSnapshot, feedbackSnapshot] = await Promise.all([
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'bookDetails')),
+        getDocs(collection(db, 'complaints'))
+      ]);
 
-  // Fetch all users
-  const fetchUsers = async () => {
-    const querySnapshot = await getDocs(collection(db, 'users'))
-    const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    setUsers(users)
-  }
+      const usersData = usersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      setUsers(usersData);
 
-  // Fetch products
-  const fetchProducts = async () => {
-    const querySnapshot = await getDocs(collection(db, 'bookDetails'))
-    const products = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    setProducts(products)
-  }
+      setSellerApplications(usersData.filter(users => users.role === "seller" && users.status === "Pending"));
 
-  // Fetch feedback (complaints)
-  const fetchFeedback = async () => {
-    const querySnapshot = await getDocs(collection(db, 'complaints'))
-    const feedback = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-    setFeedback(feedback)
-  }
+      setProducts(productsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      setFeedback(feedbackSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
-  // Fetch data on component mount
+  // Check if user is admin
   useEffect(() => {
-    fetchSellerApplications()
-    fetchUsers()
-    fetchProducts()
-    fetchFeedback()
-  }, [])
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists() && userDoc.data().role === 'admin') {
+          setIsAdmin(true);
+          fetchData();
+        } else {
+          setIsAdmin(false);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => unsubscribe(); // Cleanup on unmount
+  }, []);
 
   // Approve seller application
   const handleApproveApplication = async (id: string) => {
-    const sellerRef = doc(db, 'users', id)
-    await updateDoc(sellerRef, { status: 'Approved' })
-    fetchSellerApplications() // Refresh the list
-    toast({
-      title: 'Success',
-      description: 'Seller application approved.',
-    })
-  }
+    await updateDoc(doc(db, 'users', id), { status: 'Approved' });
+    fetchData();
+    toast({ title: 'Success', description: 'Seller application approved.' });
+  };
 
   // Remove user account
   const handleRemoveUser = async (id: string) => {
-    const userRef = doc(db, 'users', id)
-    await deleteDoc(userRef)
-    fetchUsers() // Refresh the list
-    toast({
-      title: 'Success',
-      description: 'User account removed.',
-    })
-  }
+    await deleteDoc(doc(db, 'users', id));
+    fetchData();
+    toast({ title: 'Success', description: 'User account removed.' });
+  };
 
-  // Approve product
+  // Approve product listing
   const handleApproveProduct = async (id: string) => {
-    const productRef = doc(db, 'bookDetails', id)
-    await updateDoc(productRef, { status: 'Approved' })
-    fetchProducts() // Refresh the list
-    toast({
-      title: 'Success',
-      description: 'Product approved.',
-    })
-  }
+    await updateDoc(doc(db, 'bookDetails', id), { status: 'Approved' });
+    fetchData();
+    toast({ title: 'Success', description: 'Product approved.' });
+  };
+
+  if (isAdmin === null) return <div>Loading...</div>;
+  if (!isAdmin) return <div>Access Denied. You are not an admin.</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -103,9 +99,7 @@ export default function AdminDashboardPage() {
               <tr key={app.id}>
                 <td>{app.email}</td>
                 <td>
-                  {app.status === 'Pending' && (
-                    <Button onClick={() => handleApproveApplication(app.id)}>Approve</Button>
-                  )}
+                  <Button onClick={() => handleApproveApplication(app.id)}>Approve</Button>
                 </td>
               </tr>
             ))}
@@ -167,7 +161,7 @@ export default function AdminDashboardPage() {
         </table>
       </section>
 
-      {/* Feedback */}
+      {/* Feedback Section */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">Feedback</h2>
         <table className="w-full">
@@ -192,5 +186,5 @@ export default function AdminDashboardPage() {
         </table>
       </section>
     </div>
-  )
+  );
 }

@@ -1,3 +1,4 @@
+'use client';
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -12,36 +13,40 @@ export default function SellerRegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [description, setDescription] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!name || !email || !password || !description) {
+      setError("All fields are required.");
+      return;
+    }
+
     try {
-      // Save seller data and role to Firestore
+      // Save seller data with "Pending" status
       await addDoc(collection(db, "users"), {
         email,
         name,
         role: "seller",
         description,
+        status: "Pending", // status set as Pending
         createdAt: serverTimestamp(),
       });
 
       toast({
-        title: "Success",
-        description: "Your seller application has been submitted for review.",
+        title: "Seller Application Submitted",
+        description: "Your application is now pending approval.",
       });
       router.push("/");
     } catch (error: any) {
       console.error("Seller registration error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to register as seller",
-        variant: "destructive",
-      });
+      setError(error.message || "Failed to register as seller.");
     }
   };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Register as a Seller</h1>
@@ -86,9 +91,9 @@ export default function SellerRegisterPage() {
             required
           />
         </div>
+        {error && <div className="text-red-600 text-sm mb-4">{error}</div>}
         <Button type="submit">Register as Seller</Button>
       </form>
     </div>
-  )
+  );
 }
-

@@ -1,62 +1,69 @@
-"use client";
-
+'use client';
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { signInWithEmailAndPassword } from "firebase/auth"; // Firebase Auth function
-import { auth, db } from "@/config/firebase"; // Import Firestore (update path if necessary)
-import { doc, getDoc } from "firebase/firestore"; // Firestore functions
+import { db, auth } from "@/config/firebase"; // Import db and auth
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore"; // Add Firestore methods for role check
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
+  const authInstance = getAuth(); // Initialize Firebase auth
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    if (!email || !password) {
+      setError("Both email and password are required.");
+      return;
+    }
 
     try {
-      // Firebase Authentication
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // Firebase authentication
+      await signInWithEmailAndPassword(authInstance, email, password);
 
-      // Fetch user role from Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
+      toast({
+        title: "Login Successful",
+        description: "Redirecting to your dashboard...",
+      });
 
-      if (userDoc.exists()) {
-        const { role } = userDoc.data();
-
-        toast({
-          title: "Success",
-          description: `Welcome back, ${user.email}`,
-        });
-
-        // Redirect based on role
-        if (role === "seller") {
-          router.push("/seller-dashboard");
-        } else if (role === "user") {
+      // After successful login, redirect based on user role
+      const user = authInstance.currentUser;
+      if (user) {
+        // Get user role from Firestore
+        const role = await getUserRole(user.uid);
+        
+        if (role === "admin") {
+          router.push("/admin-dashboard");
+        } else {
           router.push("/UserDashboard");
-        } else if (role == "admin")
-          router.push("/admin-dashboard"); // Fallback for other roles
-      } else {
-        throw new Error("User role not found in Firestore.");
+        }
       }
     } catch (error: any) {
-      // Handle login errors
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+      setError(error.message || "Failed to log in.");
+    }
+  };
+
+  // Function to get user role from Firestore (adjust according to your Firestore structure)
+  const getUserRole = async (uid: string) => {
+    try {
+      const userDocRef = doc(db, "users", uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        return userData?.role || "user"; // Default to "user" if no role is found
+      } else {
+        throw new Error("User not found");
+      }
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      return "user"; // Default fallback
     }
   };
 
@@ -84,14 +91,8 @@ export default function LoginPage() {
             required
           />
         </div>
-        <Button type="submit" className="w-full mb-4" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
-        </Button>
-        <div className="text-center">
-          <Link href="/account-recovery" className="text-blue-600 hover:underline">
-            Forgot password?
-          </Link>
-        </div>
+        {error && <div className="text-red-600 text-sm mb-4">{error}</div>}
+        <Button type="submit">Login</Button>
       </form>
     </div>
   );

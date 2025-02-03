@@ -1,50 +1,69 @@
-"use client";
-
+'use client';
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { auth } from "@/config/firebase.js"; // Adjust the path if needed
+import { auth, db } from "@/config/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { setDoc, doc, serverTimestamp } from "firebase/firestore";
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation
     if (password !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
+      setError("Passwords do not match!");
       return;
     }
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Success",
-        description: "Registration successful. Please log in.",
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Save user data to Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email,
+        name,
+        role: "user", // default role is "user"
+        status: "",
+        createdAt: serverTimestamp(),
       });
-      router.push('/login');
+
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created successfully.",
+      });
+      router.push("/login");
     } catch (error: any) {
-      console.error('Registration error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to register",
-        variant: "destructive",
-      });
+      console.error("Error during registration:", error);
+      setError(error.message || "Registration failed. Please try again.");
     }
   };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Register</h1>
       <form onSubmit={handleSubmit} className="max-w-md mx-auto">
+        <div className="mb-4">
+          <label htmlFor="name" className="block mb-2">Name</label>
+          <Input
+            type="text"
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+        </div>
         <div className="mb-4">
           <label htmlFor="email" className="block mb-2">Email</label>
           <Input
@@ -75,8 +94,9 @@ export default function RegisterPage() {
             required
           />
         </div>
-        <Button type="submit" className="w-full">Register</Button>
+        {error && <div className="text-red-600 text-sm mb-4">{error}</div>}
+        <Button type="submit">Register</Button>
       </form>
     </div>
-  )
+  );
 }
