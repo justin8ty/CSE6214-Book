@@ -1,31 +1,47 @@
-'use client'
-
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { useToast } from '@/components/ui/use-toast'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
+import { db } from "@/config/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 export default function SellerRegisterPage() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [description, setDescription] = useState('')
-  const router = useRouter()
-  const { toast } = useToast()
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [description, setDescription] = useState("");
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Implement seller registration logic here
-    console.log('Registering seller:', { name, email, password, description })
-    toast({
-      title: "Success",
-      description: "Your seller application has been submitted for review.",
-    })
-    router.push('/')
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
+    try {
+      // Save seller data and role to Firestore
+      await addDoc(collection(db, "users"), {
+        email,
+        name,
+        role: "seller",
+        description,
+        createdAt: serverTimestamp(),
+      });
+
+      toast({
+        title: "Success",
+        description: "Your seller application has been submitted for review.",
+      });
+      router.push("/");
+    } catch (error: any) {
+      console.error("Seller registration error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to register as seller",
+        variant: "destructive",
+      });
+    }
+  };
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Register as a Seller</h1>

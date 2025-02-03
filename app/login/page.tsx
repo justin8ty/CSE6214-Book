@@ -1,28 +1,64 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { useToast } from '@/components/ui/use-toast'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/components/ui/use-toast";
+import { signInWithEmailAndPassword } from "firebase/auth"; // Firebase Auth function
+import { auth, db } from "@/config/firebase"; // Import Firestore (update path if necessary)
+import { doc, getDoc } from "firebase/firestore"; // Firestore functions
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const router = useRouter()
-  const { toast } = useToast()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Implement login logic here
-    console.log('Logging in:', { email, password })
-    toast({
-      title: "Success",
-      description: "Login successful.",
-    })
-    router.push('/')
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // Firebase Authentication
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Fetch user role from Firestore
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const { role } = userDoc.data();
+
+        toast({
+          title: "Success",
+          description: `Welcome back, ${user.email}`,
+        });
+
+        // Redirect based on role
+        if (role === "seller") {
+          router.push("/seller-dashboard");
+        } else if (role === "user") {
+          router.push("/UserDashboard");
+        } else if (role == "admin")
+          router.push("/admin-dashboard"); // Fallback for other roles
+      } else {
+        throw new Error("User role not found in Firestore.");
+      }
+    } catch (error: any) {
+      // Handle login errors
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -48,14 +84,15 @@ export default function LoginPage() {
             required
           />
         </div>
-        <Button type="submit" className="w-full mb-4">Login</Button>
+        <Button type="submit" className="w-full mb-4" disabled={loading}>
+          {loading ? "Logging in..." : "Login"}
+        </Button>
         <div className="text-center">
-          <Link href="/forgot-password" className="text-blue-600 hover:underline">
+          <Link href="/account-recovery" className="text-blue-600 hover:underline">
             Forgot password?
           </Link>
         </div>
       </form>
     </div>
-  )
+  );
 }
-

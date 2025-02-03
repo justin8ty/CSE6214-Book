@@ -1,40 +1,55 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { StarIcon } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '@/config/firebase'; // Ensure your Firebase config file is correctly imported
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// Mock data for demonstration
-const initialFeedback = [
-  { id: '1', customer: 'John Doe', book: 'To Kill a Mockingbird', rating: 5, comment: 'Excellent condition, fast shipping!', date: '2023-06-01' },
-  { id: '2', customer: 'Jane Smith', book: '1984', rating: 4, comment: 'Good book, as described. Slightly delayed shipping.', date: '2023-05-28' },
-  { id: '3', customer: 'Bob Johnson', book: 'Pride and Prejudice', rating: 3, comment: 'Book was in okay condition, but not as good as expected.', date: '2023-05-25' },
-]
+// Define the Complaint type
+interface Complaint {
+  id: string;
+  customer: string;
+  description: string;
+  date: any; // Firestore Timestamp type (use Date if you convert it)
+}
 
-export default function ViewFeedbackPage() {
-  const [feedback, setFeedback] = useState(initialFeedback)
-  const [filter, setFilter] = useState('')
+export default function ViewComplaintsPage() {
+  const [complaints, setComplaints] = useState<Complaint[]>([]); // Use the Complaint type for state
+  const [filter, setFilter] = useState(''); // State for search filter
 
-  const filteredFeedback = feedback.filter(item => 
-    item.customer.toLowerCase().includes(filter.toLowerCase()) ||
-    item.book.toLowerCase().includes(filter.toLowerCase()) ||
-    item.comment.toLowerCase().includes(filter.toLowerCase())
-  )
+  // Fetch complaints from Firestore
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'complaints')); // Fetch complaints collection
+        const complaintsData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Complaint[]; // Cast the data to Complaint type
+        console.log('Fetched Complaints:', complaintsData); // Debugging
+        setComplaints(complaintsData); // Update state
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+      }
+    };
 
-  const renderStars = (rating: number) => {
-    return Array(5).fill(0).map((_, i) => (
-      <StarIcon key={i} className={`h-5 w-5 ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`} />
-    ))
-  }
+    fetchComplaints();
+  }, []);
+
+  // Filter complaints based on user input
+  const filteredComplaints = complaints.filter((item) =>
+    item.customer?.toLowerCase().includes(filter.toLowerCase()) ||
+    item.description?.toLowerCase().includes(filter.toLowerCase())
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8 text-teal-700">View Customer Feedback</h1>
+      <h1 className="text-3xl font-bold mb-8 text-teal-700">View Customer Complaints</h1>
       <div className="mb-4 flex justify-between items-center">
         <Input
           type="text"
-          placeholder="Filter feedback..."
+          placeholder="Search complaints..."
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           className="max-w-sm"
@@ -44,29 +59,30 @@ export default function ViewFeedbackPage() {
         <TableHeader>
           <TableRow>
             <TableHead>Customer</TableHead>
-            <TableHead>Book</TableHead>
-            <TableHead>Rating</TableHead>
-            <TableHead>Comment</TableHead>
+            <TableHead>Description</TableHead>
             <TableHead>Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredFeedback.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.customer}</TableCell>
-              <TableCell>{item.book}</TableCell>
-              <TableCell>
-                <div className="flex">
-                  {renderStars(item.rating)}
-                </div>
+          {filteredComplaints.length > 0 ? (
+            filteredComplaints.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>{item.customer || 'Anonymous'}</TableCell>
+                <TableCell>{item.description || 'No description provided'}</TableCell>
+                <TableCell>
+                  {item.date?.toDate ? item.date.toDate().toLocaleString() : 'N/A'}
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={3} className="text-center">
+                No complaints found.
               </TableCell>
-              <TableCell>{item.comment}</TableCell>
-              <TableCell>{item.date}</TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
-

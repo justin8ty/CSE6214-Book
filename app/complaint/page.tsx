@@ -1,27 +1,75 @@
 'use client'
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { useToast } from '@/components/ui/use-toast'
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { db, auth } from '@/config/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export default function ComplaintPage() {
-  const [subject, setSubject] = useState('')
-  const [description, setDescription] = useState('')
-  const { toast } = useToast()
+  const [subject, setSubject] = useState('');
+  const [description, setDescription] = useState('');
+  const [customer, setCustomer] = useState<string | null>(null);
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Implement complaint submission logic here
-    console.log('Submitting complaint:', { subject, description })
-    toast({
-      title: "Success",
-      description: "Your complaint has been submitted.",
-    })
-    setSubject('')
-    setDescription('')
-  }
+  // Listen for authenticated user
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCustomer(user.displayName || user.email || 'Unknown User');
+      } else {
+        setCustomer(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!subject || !description) {
+      toast({
+        title: "Error",
+        description: "Please fill out all fields before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const complaintsRef = collection(db, 'complaints');
+      await addDoc(complaintsRef, {
+        subject,
+        description,
+        customer: customer || 'Guest User', // Save user info or fallback
+        date: serverTimestamp(),
+      });
+
+      toast({
+        title: "Success",
+        description: "Your complaint has been submitted.",
+      });
+
+      setSubject('');
+      setDescription('');
+    } catch (error) {
+      console.error("Error submitting complaint:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -47,9 +95,10 @@ export default function ComplaintPage() {
             required
           />
         </div>
-        <Button type="submit">Submit Complaint</Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? "Submitting..." : "Submit Complaint"}
+        </Button>
       </form>
     </div>
-  )
+  );
 }
-

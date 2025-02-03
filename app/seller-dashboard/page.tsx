@@ -21,7 +21,20 @@ export default function SellerDashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Seller Dashboard</h1>
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold">Seller Dashboard</h1>
+        <div className="flex gap-4">
+          <Link href="/seller/manage-orders">
+            <Button>Manage Orders</Button>
+          </Link>
+          <Link href="/seller/track-orders">
+            <Button>Track Orders</Button>
+          </Link>
+          <Link href="/seller/view-feedback">
+            <Button>View Feedback</Button>
+          </Link>
+        </div>
+      </div>
       
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">My Books</h2>
@@ -84,4 +97,3 @@ export default function SellerDashboardPage() {
     </div>
   )
 }
-

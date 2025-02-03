@@ -1,80 +1,107 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
-
-// Mock data for demonstration
-const initialSellerApplications = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', status: 'Pending' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', status: 'Approved' },
-]
-
-const initialUsers = [
-  { id: '1', name: 'Alice Johnson', email: 'alice@example.com', role: 'Buyer' },
-  { id: '2', name: 'Bob Williams', email: 'bob@example.com', role: 'Seller' },
-]
-
-const initialProducts = [
-  { id: '1', title: 'To Kill a Mockingbird', seller: 'John Doe', status: 'Approved' },
-  { id: '2', title: '1984', seller: 'Jane Smith', status: 'Pending' },
-]
+import { db } from '@/config/firebase' // Import Firebase Firestore instance
+import { collection, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore'
 
 export default function AdminDashboardPage() {
-  const [sellerApplications, setSellerApplications] = useState(initialSellerApplications)
-  const [users, setUsers] = useState(initialUsers)
-  const [products, setProducts] = useState(initialProducts)
+  const [sellerApplications, setSellerApplications] = useState<any[]>([])
+  const [users, setUsers] = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [feedback, setFeedback] = useState<any[]>([])
   const { toast } = useToast()
 
-  const handleApproveApplication = (id: string) => {
-    setSellerApplications(sellerApplications.map(app => 
-      app.id === id ? { ...app, status: 'Approved' } : app
-    ))
+  // Fetch seller applications (users with role "seller" and status "Pending")
+  const fetchSellerApplications = async () => {
+    const querySnapshot = await getDocs(collection(db, 'users'))
+    const applications = querySnapshot.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter((user: any) => user.role === 'seller')
+    setSellerApplications(applications)
+  }
+
+  // Fetch all users
+  const fetchUsers = async () => {
+    const querySnapshot = await getDocs(collection(db, 'users'))
+    const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    setUsers(users)
+  }
+
+  // Fetch products
+  const fetchProducts = async () => {
+    const querySnapshot = await getDocs(collection(db, 'bookDetails'))
+    const products = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    setProducts(products)
+  }
+
+  // Fetch feedback (complaints)
+  const fetchFeedback = async () => {
+    const querySnapshot = await getDocs(collection(db, 'complaints'))
+    const feedback = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    setFeedback(feedback)
+  }
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchSellerApplications()
+    fetchUsers()
+    fetchProducts()
+    fetchFeedback()
+  }, [])
+
+  // Approve seller application
+  const handleApproveApplication = async (id: string) => {
+    const sellerRef = doc(db, 'users', id)
+    await updateDoc(sellerRef, { status: 'Approved' })
+    fetchSellerApplications() // Refresh the list
     toast({
-      title: "Success",
-      description: "Seller application approved.",
+      title: 'Success',
+      description: 'Seller application approved.',
     })
   }
 
-  const handleRemoveUser = (id: string) => {
-    setUsers(users.filter(user => user.id !== id))
+  // Remove user account
+  const handleRemoveUser = async (id: string) => {
+    const userRef = doc(db, 'users', id)
+    await deleteDoc(userRef)
+    fetchUsers() // Refresh the list
     toast({
-      title: "Success",
-      description: "User account removed.",
+      title: 'Success',
+      description: 'User account removed.',
     })
   }
 
-  const handleApproveProduct = (id: string) => {
-    setProducts(products.map(product => 
-      product.id === id ? { ...product, status: 'Approved' } : product
-    ))
+  // Approve product
+  const handleApproveProduct = async (id: string) => {
+    const productRef = doc(db, 'bookDetails', id)
+    await updateDoc(productRef, { status: 'Approved' })
+    fetchProducts() // Refresh the list
     toast({
-      title: "Success",
-      description: "Product approved.",
+      title: 'Success',
+      description: 'Product approved.',
     })
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-      
+
+      {/* Seller Applications */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Seller Applications</h2>
         <table className="w-full">
           <thead>
             <tr>
-              <th className="text-left">Name</th>
               <th className="text-left">Email</th>
-              <th className="text-left">Status</th>
               <th className="text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
             {sellerApplications.map((app) => (
               <tr key={app.id}>
-                <td>{app.name}</td>
                 <td>{app.email}</td>
-                <td>{app.status}</td>
                 <td>
                   {app.status === 'Pending' && (
                     <Button onClick={() => handleApproveApplication(app.id)}>Approve</Button>
@@ -86,12 +113,12 @@ export default function AdminDashboardPage() {
         </table>
       </section>
 
+      {/* User Management */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">User Management</h2>
         <table className="w-full">
           <thead>
             <tr>
-              <th className="text-left">Name</th>
               <th className="text-left">Email</th>
               <th className="text-left">Role</th>
               <th className="text-left">Actions</th>
@@ -100,7 +127,6 @@ export default function AdminDashboardPage() {
           <tbody>
             {users.map((user) => (
               <tr key={user.id}>
-                <td>{user.name}</td>
                 <td>{user.email}</td>
                 <td>{user.role}</td>
                 <td>
@@ -112,7 +138,8 @@ export default function AdminDashboardPage() {
         </table>
       </section>
 
-      <section>
+      {/* Product Verification */}
+      <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">Product Verification</h2>
         <table className="w-full">
           <thead>
@@ -128,9 +155,9 @@ export default function AdminDashboardPage() {
               <tr key={product.id}>
                 <td>{product.title}</td>
                 <td>{product.seller}</td>
-                <td>{product.status}</td>
+                <td>{product.status || 'Pending'}</td>
                 <td>
-                  {product.status === 'Pending' && (
+                  {(!product.status || product.status === 'Pending') && (
                     <Button onClick={() => handleApproveProduct(product.id)}>Approve</Button>
                   )}
                 </td>
@@ -139,7 +166,31 @@ export default function AdminDashboardPage() {
           </tbody>
         </table>
       </section>
+
+      {/* Feedback */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Feedback</h2>
+        <table className="w-full">
+          <thead>
+            <tr>
+              <th className="text-left">Subject</th>
+              <th className="text-left">Description</th>
+              <th className="text-left">Customer</th>
+              <th className="text-left">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {feedback.map((fb) => (
+              <tr key={fb.id}>
+                <td>{fb.subject}</td>
+                <td>{fb.description}</td>
+                <td>{fb.customer}</td>
+                <td>{fb.date?.toDate().toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </div>
   )
 }
-
