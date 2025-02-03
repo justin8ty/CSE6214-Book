@@ -8,24 +8,29 @@ import { db } from '@/config/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 export default function BookDetailsPage({ params }: { params: { id: string } }) {
-  const [book, setBook] = useState(null); // State to store the book data
-  const [loading, setLoading] = useState(true); // State to handle loading
-  const [isInWishlist, setIsInWishlist] = useState(false); // Wishlist state
+  const [book, setBook] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isInWishlist, setIsInWishlist] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchBookDetails = async () => {
       try {
-        const bookRef = doc(db, 'bookDetails', params.id); // Get the document reference
-        const bookDoc = await getDoc(bookRef); // Fetch the document
+        const bookRef = doc(db, 'bookDetails', params.id);
+        const bookDoc = await getDoc(bookRef);
         if (bookDoc.exists()) {
-          setBook(bookDoc.data()); // Set book data
+          const bookData = { id: params.id, ...bookDoc.data() };
+          setBook(bookData);
+
+          // Check if the book is already in the wishlist
+          const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+          setIsInWishlist(wishlist.some((item: any) => item.id === params.id));
         } else {
           console.error('No such book!');
         }
-        setLoading(false); // Loading complete
       } catch (error) {
         console.error('Error fetching book details:', error);
+      } finally {
         setLoading(false);
       }
     };
@@ -33,30 +38,26 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
     fetchBookDetails();
   }, [params.id]);
 
-  const handleAddToCart = () => {
-    toast({
-      title: 'Success',
-      description: 'Book added to cart.',
-    });
-  };
-
   const handleToggleWishlist = () => {
+    const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+
+    if (isInWishlist) {
+      // Remove book from wishlist
+      const updatedWishlist = wishlist.filter((item: any) => item.id !== book.id);
+      localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
+      toast({ title: 'Removed', description: 'Book removed from wishlist.' });
+    } else {
+      // Add book to wishlist
+      wishlist.push(book);
+      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+      toast({ title: 'Added', description: 'Book added to wishlist.' });
+    }
+
     setIsInWishlist(!isInWishlist);
-    toast({
-      title: 'Success',
-      description: isInWishlist
-        ? 'Book removed from wishlist.'
-        : 'Book added to wishlist.',
-    });
   };
 
-  if (loading) {
-    return <p>Loading book details...</p>;
-  }
-
-  if (!book) {
-    return <p>Book not found.</p>;
-  }
+  if (loading) return <p>Loading book details...</p>;
+  if (!book) return <p>Book not found.</p>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -75,14 +76,9 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
           <p className="text-xl text-gray-600 mb-4">by {book.author}</p>
           <p className="text-2xl font-bold mb-4">${book.price.toFixed(2)}</p>
           <p className="mb-4">{book.description}</p>
-          <div className="mb-4">
-            <strong>Condition:</strong> {book.condition}
-          </div>
-          <div className="mb-4">
-            <strong>Seller:</strong> {book.seller}
-          </div>
+          <div className="mb-4"><strong>Condition:</strong> {book.condition}</div>
+          <div className="mb-4"><strong>Seller:</strong> {book.seller}</div>
           <div className="flex space-x-4">
-            <Button onClick={handleAddToCart}>Add to Cart</Button>
             <Button variant="outline" onClick={handleToggleWishlist}>
               {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
             </Button>
