@@ -1,41 +1,54 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-
-// Mock data for demonstration
-const initialBooks = [
-  { id: '1', title: 'To Kill a Mockingbird', author: 'Harper Lee', price: 8.99, stock: 5 },
-  { id: '2', title: '1984', author: 'George Orwell', price: 10.99, stock: 3 },
-]
-
-const initialOrders = [
-  { id: '1', bookId: '1', customerName: 'John Doe', status: 'Processing' },
-  { id: '2', bookId: '2', customerName: 'Jane Smith', status: 'Shipped' },
-]
+import { db, auth } from '@/config/firebase'
+import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore'
+import { useAuthState } from 'react-firebase-hooks/auth'
 
 export default function SellerDashboardPage() {
-  const [books, setBooks] = useState(initialBooks)
-  const [orders, setOrders] = useState(initialOrders)
+  const [user] = useAuthState(auth)
+  const [books, setBooks] = useState([])
+  const [orders, setOrders] = useState([])
+
+  useEffect(() => {
+    if (!user) return
+
+    const fetchBooksAndOrders = async () => {
+      try {
+        // Fetch books linked to the seller
+        const booksQuery = query(collection(db, 'bookDetails'), where('sellerId', '==', user.uid))
+        const booksSnapshot = await getDocs(booksQuery)
+        setBooks(booksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+
+        // Fetch orders linked to the seller
+        const ordersQuery = query(collection(db, 'orders'), where('sellerId', '==', user.uid))
+        const ordersSnapshot = await getDocs(ordersQuery)
+        setOrders(ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
+    }
+
+    fetchBooksAndOrders()
+  }, [user])
+
+  const handleUpdateOrderStatus = async (id: string, newStatus: string) => {
+    try {
+      const orderRef = doc(db, 'orders', id)
+      await updateDoc(orderRef, { status: newStatus })
+      setOrders(prev => prev.map(order => (order.id === id ? { ...order, status: newStatus } : order)))
+    } catch (error) {
+      console.error('Error updating order status:', error)
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Seller Dashboard</h1>
-        <div className="flex gap-4">
-          <Link href="/seller/manage-orders">
-            <Button>Manage Orders</Button>
-          </Link>
-          <Link href="/seller/track-orders">
-            <Button>Track Orders</Button>
-          </Link>
-          <Link href="/seller/view-feedback">
-            <Button>View Feedback</Button>
-          </Link>
-        </div>
-      </div>
-      
+      <h1 className="text-3xl font-bold mb-8">Seller Dashboard</h1>
+
+      {/* My Books */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">My Books</h2>
         <Link href="/add-book">
@@ -52,7 +65,7 @@ export default function SellerDashboardPage() {
             </tr>
           </thead>
           <tbody>
-            {books.map((book) => (
+            {books.map(book => (
               <tr key={book.id}>
                 <td>{book.title}</td>
                 <td>{book.author}</td>
@@ -67,6 +80,7 @@ export default function SellerDashboardPage() {
         </table>
       </section>
 
+      {/* Recent Orders */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">Recent Orders</h2>
         <table className="w-full">
@@ -80,14 +94,22 @@ export default function SellerDashboardPage() {
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
+            {orders.map(order => (
               <tr key={order.id}>
                 <td>{order.id}</td>
                 <td>{books.find(book => book.id === order.bookId)?.title}</td>
                 <td>{order.customerName}</td>
                 <td>{order.status}</td>
                 <td>
-                  <Button variant="outline" size="sm">Update Status</Button>
+                  {order.status !== 'Delivered' && (
+                    <Button variant="outline" size="sm" onClick={() => handleUpdateOrderStatus(order.id, 'Shipped')}>Mark as Shipped</Button>
+                  )}
+                  {order.status === 'Shipped' && (
+                    <Button variant="outline" size="sm" onClick={() => handleUpdateOrderStatus(order.id, 'Delivered')}>Mark as Delivered</Button>
+                  )}
+                  {order.status === 'Delivered' && (
+                    <Button variant="outline" size="sm" onClick={() => handleUpdateOrderStatus(order.id, 'Returned')}>Handle Return</Button>
+                  )}
                 </td>
               </tr>
             ))}
