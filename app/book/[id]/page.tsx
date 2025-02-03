@@ -1,40 +1,61 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/components/ui/use-toast'
-
-// Mock data for demonstration
-const book = {
-  id: '1',
-  title: 'To Kill a Mockingbird',
-  author: 'Harper Lee',
-  description: 'To Kill a Mockingbird is a novel by Harper Lee published in 1960. It was immediately successful, winning the Pulitzer Prize, and has become a classic of modern American literature.',
-  price: 8.99,
-  condition: 'Good',
-  seller: 'BookLover123',
-  imageUrl: '/placeholder.svg?height=300&width=200'
-}
+import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { db } from '@/config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function BookDetailsPage({ params }: { params: { id: string } }) {
-  const [isInWishlist, setIsInWishlist] = useState(false)
-  const { toast } = useToast()
+  const [book, setBook] = useState(null); // State to store the book data
+  const [loading, setLoading] = useState(true); // State to handle loading
+  const [isInWishlist, setIsInWishlist] = useState(false); // Wishlist state
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchBookDetails = async () => {
+      try {
+        const bookRef = doc(db, 'bookDetails', params.id); // Get the document reference
+        const bookDoc = await getDoc(bookRef); // Fetch the document
+        if (bookDoc.exists()) {
+          setBook(bookDoc.data()); // Set book data
+        } else {
+          console.error('No such book!');
+        }
+        setLoading(false); // Loading complete
+      } catch (error) {
+        console.error('Error fetching book details:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchBookDetails();
+  }, [params.id]);
 
   const handleAddToCart = () => {
-    // Implement add to cart logic here
     toast({
-      title: "Success",
-      description: "Book added to cart.",
-    })
-  }
+      title: 'Success',
+      description: 'Book added to cart.',
+    });
+  };
 
   const handleToggleWishlist = () => {
-    setIsInWishlist(!isInWishlist)
+    setIsInWishlist(!isInWishlist);
     toast({
-      title: "Success",
-      description: isInWishlist ? "Book removed from wishlist." : "Book added to wishlist.",
-    })
+      title: 'Success',
+      description: isInWishlist
+        ? 'Book removed from wishlist.'
+        : 'Book added to wishlist.',
+    });
+  };
+
+  if (loading) {
+    return <p>Loading book details...</p>;
+  }
+
+  if (!book) {
+    return <p>Book not found.</p>;
   }
 
   return (
@@ -69,6 +90,5 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
         </div>
       </div>
     </div>
-  )
+  );
 }
-
