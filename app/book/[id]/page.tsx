@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { db } from '@/config/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';  // Import Firebase auth
 
 export default function BookDetailsPage({ params }: { params: { id: string } }) {
   const [book, setBook] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);  // Track if the user is logged in
   const { toast } = useToast();
 
   useEffect(() => {
@@ -22,7 +24,7 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
           const bookData = { id: params.id, ...bookDoc.data() };
           setBook(bookData);
 
-          // Check if the book is already in the wishlist
+          // Check if the book is already in the wishlist for guests
           const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
           setIsInWishlist(wishlist.some((item: any) => item.id === params.id));
         } else {
@@ -35,19 +37,27 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
       }
     };
 
-    fetchBookDetails();
+    // Check if the user is logged in (Firebase Authentication)
+    const auth = getAuth();
+    const user = auth.currentUser;
+    if (user) {
+      setIsLoggedIn(true);  // User is logged in
+    }
+
+    fetchBookDetails();  // Fetch book details
   }, [params.id]);
 
-  const handleToggleWishlist = () => {
+  // Handle guest wishlist
+  const handleToggleWishlistGuest = () => {
     const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
 
     if (isInWishlist) {
-      // Remove book from wishlist
+      // Remove book from wishlist (guest)
       const updatedWishlist = wishlist.filter((item: any) => item.id !== book.id);
       localStorage.setItem('wishlist', JSON.stringify(updatedWishlist));
       toast({ title: 'Removed', description: 'Book removed from wishlist.' });
     } else {
-      // Add book to wishlist
+      // Add book to wishlist (guest)
       wishlist.push(book);
       localStorage.setItem('wishlist', JSON.stringify(wishlist));
       toast({ title: 'Added', description: 'Book added to wishlist.' });
@@ -56,8 +66,30 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
     setIsInWishlist(!isInWishlist);
   };
 
-  // Handle Add to Cart
+  // Handle user wishlist
+  const handleToggleWishlistUser = async () => {
+    if (!isLoggedIn) {
+      toast({ title: 'Error', description: 'You need to be logged in to add to wishlist.' });
+      return;
+    }
+
+    try {
+      const bookRef = doc(db, 'bookDetails', book.id);
+      await updateDoc(bookRef, { wishlist: '1' });  // Change wishlist field to "1" for logged-in user
+      toast({ title: 'Added', description: 'Book added to wishlist.' });
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+      toast({ title: 'Error', description: 'Failed to add book to wishlist.' });
+    }
+  };
+
+  // Handle Add to Cart for logged-in users
   const handleAddToCart = async () => {
+    if (!isLoggedIn) {
+      toast({ title: 'Error', description: 'You need to be logged in to add to cart.' });
+      return;
+    }
+
     try {
       const bookRef = doc(db, 'bookDetails', book.id);
       await updateDoc(bookRef, {
@@ -92,10 +124,27 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
           <p className="mb-4">{book.description}</p>
           <div className="mb-4"><strong>Seller:</strong> {book.seller}</div>
           <div className="flex space-x-4">
-            <Button variant="outline" onClick={handleToggleWishlist}>
-              {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+            {/* Wishlist Button for Guests */}
+            <Button variant="outline" onClick={handleToggleWishlistGuest}>
+              {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist (Guest)'}
             </Button>
-            <Button onClick={handleAddToCart}>Add to Cart</Button> {/* Add to Cart Button */}
+
+            {/* Wishlist Button for Logged-In Users */}
+            <Button
+              variant="outline"
+              onClick={handleToggleWishlistUser}
+              disabled={!isLoggedIn}  // Disable the button if not logged in
+            >
+              {isLoggedIn ? 'Add to Wishlist (User)' : 'Login to Add to Wishlist'}
+            </Button>
+
+            {/* Add to Cart Button for Logged-In Users */}
+            <Button
+              onClick={handleAddToCart}
+              disabled={!isLoggedIn}  // Disable the button if not logged in
+            >
+              {isLoggedIn ? 'Add to Cart' : 'Login to Add to Cart'}
+            </Button>
           </div>
         </div>
       </div>

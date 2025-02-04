@@ -44,12 +44,7 @@ export default function BookList({ books, onAddToCart }: BookListProps) {
               <Link href={`/book/${book.id}`}>
                 <Button variant="outline">View Details</Button>
               </Link>
-              <Button
-                onClick={() => onAddToCart(book.id)} // Add to Cart functionality
-                disabled={book.cart === '1'} // Disable if already in cart
-              >
-                {book.cart === '1' ? 'Added' : 'Add to Cart'} {/* Change button text */}
-              </Button>
+              
             </div>
           </div>
         </div>
