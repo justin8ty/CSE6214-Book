@@ -8,13 +8,15 @@ interface Book {
   author: string
   price: number
   imageUrl: string
+  cart: string // To track if the book is added to cart (cart: '1' means added)
 }
 
 interface BookListProps {
   books: Book[]
+  onAddToCart: (bookId: string) => void // Pass handler to handle Add to Cart
 }
 
-export default function BookList({ books }: BookListProps) {
+export default function BookList({ books, onAddToCart }: BookListProps) {
   if (books.length === 0) {
     return (
       <div className="text-center py-8">
@@ -42,7 +44,12 @@ export default function BookList({ books }: BookListProps) {
               <Link href={`/book/${book.id}`}>
                 <Button variant="outline">View Details</Button>
               </Link>
-              <Button>Add to Cart</Button>
+              <Button
+                onClick={() => onAddToCart(book.id)} // Add to Cart functionality
+                disabled={book.cart === '1'} // Disable if already in cart
+              >
+                {book.cart === '1' ? 'Added' : 'Add to Cart'} {/* Change button text */}
+              </Button>
             </div>
           </div>
         </div>
@@ -50,4 +57,3 @@ export default function BookList({ books }: BookListProps) {
     </div>
   )
 }
-
