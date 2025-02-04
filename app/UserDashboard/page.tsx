@@ -6,71 +6,78 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { User, Book, Heart, ShoppingCart, AlertCircle, CreditCard, LogOut, UserPlus } from "lucide-react"
+import { User, Book, Heart, ShoppingCart, AlertCircle, CreditCard, LogOut, UserPlus, Search } from "lucide-react"
 import { getAuth } from "firebase/auth"
-import { db } from "@/config/firebase" // Your Firestore configuration
-import { doc, getDoc } from "firebase/firestore" // Firestore methods
+import { db } from "@/config/firebase"
+import { doc, getDoc } from "firebase/firestore"
+import { Input } from "@/components/ui/input"
 
 export default function UserDashboard() {
-  const [userData, setUserData] = useState<any>(null); // State to hold user data
-  const [error, setError] = useState<string | null>(null); // Error state
+  const [userData, setUserData] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const { toast } = useToast()
 
-  const authInstance = getAuth(); // Firebase auth instance
+  const authInstance = getAuth()
 
   useEffect(() => {
-    // Get current user and fetch data on component mount
-    const currentUser = authInstance.currentUser;
+    const currentUser = authInstance.currentUser
     if (currentUser) {
-      // Fetch user data from Firestore using the user's UID
-      fetchUserData(currentUser.uid);
+      fetchUserData(currentUser.uid)
     } else {
-      setError("No user is logged in.");
+      setError("No user is logged in.")
     }
-  }, []);
+  }, [])
 
   const fetchUserData = async (uid: string) => {
     try {
-      const userDocRef = doc(db, "users", uid);
-      const userDoc = await getDoc(userDocRef);
+      const userDocRef = doc(db, "users", uid)
+      const userDoc = await getDoc(userDocRef)
       if (userDoc.exists()) {
-        setUserData(userDoc.data());
+        setUserData(userDoc.data())
       } else {
-        setError("User not found");
+        setError("User not found")
       }
     } catch (error) {
-      setError("Failed to fetch user data");
-      console.error(error);
+      setError("Failed to fetch user data")
+      console.error(error)
     }
-  };
+  }
 
   const handleLogout = () => {
-    // Implement logout functionality here
-    console.log("Logging out");
+    console.log("Logging out")
     toast({
       title: "Logged Out",
       description: "You have been successfully logged out.",
-    });
-    router.push("/login");
-  };
+    })
+    router.push("/login")
+  }
 
   const handleRegisterAsSeller = () => {
-    // Implement seller registration logic here
-    console.log("Registering as seller");
+    console.log("Registering as seller")
     toast({
       title: "Seller Registration",
       description: "Redirecting to seller registration form.",
-    });
-    router.push("/seller-register");
-  };
+    })
+    router.push("/seller-register")
+  }
+
+  // Search function (same as in Main page)
+  const [query, setQuery] = useState('')
+  
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (query.trim()) {
+      router.push(`/search?q=${encodeURIComponent(query)}`)
+    }
+  }
 
   if (error) {
-    return <div>{error}</div>;
+    return <div>{error}</div>
   }
 
   if (!userData) {
-    return <div>Loading...</div>; // Show loading state until data is fetched
+    return <div>Loading...</div>
   }
 
   return (
@@ -81,6 +88,22 @@ export default function UserDashboard() {
           <LogOut className="mr-2 h-4 w-4" /> Logout
         </Button>
       </div>
+
+       {/* Search Bar */}
+       <form onSubmit={handleSearch} className="flex justify-center mb-8">
+        <div className="relative w-full max-w-xl">
+          <Input
+            type="text"
+            placeholder="Search for books..."
+            className="pr-10"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <Button type="submit" className="absolute right-0 top-0 bottom-0">
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
+      </form>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <Card>
