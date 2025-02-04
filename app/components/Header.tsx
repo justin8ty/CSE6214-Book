@@ -34,7 +34,7 @@ export default function Header() {
     <header className="bg-gradient-to-r from-teal-400 to-teal-500 text-white shadow-lg">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold tracking-tight hover:text-teal-100 transition-colors">
-        Thriftbooks
+          Thriftbooks
         </Link>
         <nav className="hidden md:flex space-x-1">
           {navItems.map((item) => (
@@ -58,6 +58,13 @@ export default function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
                       <Link href="/bestsellers">Bestsellers</Link>
+                    </DropdownMenuItem>
+                    {/* Added Wishlist and Wishlist1 links */}
+                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
+                      <Link href="/wishlist">Wishlist</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
+                      <Link href="/wishlist1">Wishlist1</Link>
                     </DropdownMenuItem>
                   </>
                 )}
@@ -167,9 +174,9 @@ export default function Header() {
         <div className="md:hidden bg-teal-500">
           <nav className="flex flex-col items-center py-4">
             {navItems.map((item) => (
-              <Link 
+              <Link
                 key={item}
-                href={`/${item.toLowerCase()}`} 
+                href={`/${item.toLowerCase()}`}
                 className="py-2 px-4 w-full text-center hover:bg-teal-600 transition-colors"
               >
                 {item}
@@ -181,4 +188,3 @@ export default function Header() {
     </header>
   )
 }
-
