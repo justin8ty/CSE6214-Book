@@ -1,37 +1,76 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
-
-// Mock data for demonstration
-const initialCart = [
-  { id: '1', title: 'To Kill a Mockingbird', author: 'Harper Lee', price: 8.99, quantity: 1, imageUrl: '/placeholder.svg?height=300&width=200' },
-  { id: '2', title: '1984', author: 'George Orwell', price: 10.99, quantity: 2, imageUrl: '/placeholder.svg?height=300&width=200' },
-]
+import { getAuth } from "firebase/auth"
+import { db } from "@/config/firebase"
+import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
 
 export default function CartPage() {
-  const [cart, setCart] = useState(initialCart)
+  const [cart, setCart] = useState([])
   const { toast } = useToast()
+
+  useEffect(() => {
+    fetchCartItems()
+  }, [])
+
+  const fetchCartItems = async () => {
+    try {
+      const booksRef = collection(db, 'bookDetails')
+      const q = query(booksRef, where('cart', '==', '1'))
+      const querySnapshot = await getDocs(q)
+
+      const cartItems = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        quantity: 1, // Default quantity
+      }))
+
+      setCart(cartItems)
+    } catch (error) {
+      console.error('Error fetching cart items:', error)
+    }
+  }
 
   const handleUpdateQuantity = (id: string, newQuantity: number) => {
     if (newQuantity < 1) return
     setCart(cart.map(item => item.id === id ? { ...item, quantity: newQuantity } : item))
   }
 
-  const handleRemoveItem = (id: string) => {
-    setCart(cart.filter(item => item.id !== id))
-    toast({
-      title: "Success",
-      description: "Item removed from cart.",
-    })
+  const handleRemoveItem = async (id: string) => {
+    try {
+      const auth = getAuth()
+      const user = auth.currentUser
+  
+      if (!user) {
+        toast({ title: "Error", description: "You must be logged in to modify the cart." })
+        return
+      }
+  
+      const bookRef = doc(db, 'bookDetails', id)
+      await updateDoc(bookRef, { cart: "0" }) // Update Firestore cart field to "0"
+  
+      setCart(cart.filter(item => item.id !== id)) // Remove from UI
+  
+      toast({
+        title: "Removed",
+        description: "Item removed from cart.",
+      })
+    } catch (error) {
+      console.error('Error removing item from cart:', error)
+      toast({
+        title: "Error",
+        description: "Failed to remove item. Check permissions.",
+      })
+    }
   }
+  
 
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   const handleCheckout = () => {
-    // Implement checkout logic here
     toast({
       title: "Success",
       description: "Proceeding to checkout.",
@@ -49,7 +88,7 @@ export default function CartPage() {
             {cart.map((item) => (
               <div key={item.id} className="flex items-center space-x-4 border-b pb-4">
                 <Image
-                  src={item.imageUrl}
+                  src={item.imgUrl}
                   alt={item.title}
                   width={80}
                   height={120}
@@ -58,7 +97,7 @@ export default function CartPage() {
                 <div className="flex-grow">
                   <h3 className="text-lg font-semibold">{item.title}</h3>
                   <p className="text-gray-600">{item.author}</p>
-                  <p className="text-lg font-bold">${item.price.toFixed(2)}</p>
+                  <p className="text-lg font-bold">${item.price}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="outline" size="sm" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}>-</Button>
@@ -80,4 +119,3 @@ export default function CartPage() {
     </div>
   )
 }
-
