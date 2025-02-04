@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 
 export default function SellerDashboardPage() {
   const [books, setBooks] = useState<any[]>([])
+  const [orders, setOrders] = useState<any[]>([])
   const [isSeller, setIsSeller] = useState<boolean | null>(null)
   const [sellerData, setSellerData] = useState<any>(null) // Stores seller info
   const [newBook, setNewBook] = useState({
@@ -32,6 +33,7 @@ export default function SellerDashboardPage() {
           setIsSeller(true)
           setSellerData({ id: user.uid, name: userDoc.data().name }) // Store seller info
           fetchBooks()
+          fetchOrders()
         } else {
           setIsSeller(false)
         }
@@ -50,6 +52,19 @@ export default function SellerDashboardPage() {
       setBooks(booksSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
     } catch (error) {
       console.error('Error fetching books:', error)
+    }
+  }
+
+  // 🔹 Fetch orders where orderPlaced === "1"
+  const fetchOrders = async () => {
+    try {
+      const booksSnapshot = await getDocs(collection(db, 'bookDetails'))
+      const booksData = booksSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+
+      // Only show books where orderPlaced === "1" (string)
+      setOrders(booksData.filter((book) => book.orderPlaced === "1"))
+    } catch (error) {
+      console.error('Error fetching orders:', error)
     }
   }
 
@@ -88,6 +103,7 @@ export default function SellerDashboardPage() {
       wishlist: '0',
       shipStatus: 'processing',
       status: 'approved',
+      orderPlaced: "0",
     }
 
     try {
@@ -103,6 +119,21 @@ export default function SellerDashboardPage() {
       })
     } catch (error) {
       console.error('Error adding book:', error)
+    }
+  }
+
+  // 🔹 Update shipStatus and remove from list when shipped
+  const updateShipStatus = async (bookId: string, newStatus: string) => {
+    try {
+      const bookRef = doc(db, 'bookDetails', bookId)
+      await updateDoc(bookRef, { 
+        shipStatus: newStatus, 
+        orderPlaced: newStatus === 'shipped' ? "0" : "1"  // If shipped, remove from list
+      })
+
+      fetchOrders()
+    } catch (error) {
+      console.error('Error updating ship status:', error)
     }
   }
 
@@ -125,7 +156,7 @@ export default function SellerDashboardPage() {
             <option value="in stock">In Stock</option>
             <option value="out of stock">Out of Stock</option>
           </select>
-          <Input type="text" name="imgUrl" value={newBook.imgUrl} onChange={handleInputChange} placeholder="Image URL" />
+          {/* <Input type="text" name="imgUrl" value={newBook.imgUrl} onChange={handleInputChange} placeholder="Image URL" /> */}
         </div>
         <Button className="mt-4" onClick={handleAddBook}>Add Book</Button>
       </section>
@@ -169,6 +200,35 @@ export default function SellerDashboardPage() {
             ))}
           </tbody>
         </table>
+      </section>
+
+      {/* 📌 Orders Tracking */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-4">Orders</h2>
+        {orders.length === 0 ? (
+          <p>No orders placed.</p>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left">Title</th>
+                <th className="text-left">Shipping Status</th>
+                <th className="text-left">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.id}>
+                  <td>{order.title}</td>
+                  <td>{order.shipStatus}</td>
+                  <td>
+                    <Button onClick={() => updateShipStatus(order.id, 'shipped')}>Set Shipped</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
     </div>
   )
