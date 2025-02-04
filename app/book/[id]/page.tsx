@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { db } from '@/config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 export default function BookDetailsPage({ params }: { params: { id: string } }) {
   const [book, setBook] = useState<any>(null);
@@ -56,6 +56,20 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
     setIsInWishlist(!isInWishlist);
   };
 
+  // Handle Add to Cart
+  const handleAddToCart = async () => {
+    try {
+      const bookRef = doc(db, 'bookDetails', book.id);
+      await updateDoc(bookRef, {
+        cart: '1', // Mark as added to cart
+      });
+      toast({ title: 'Added to Cart', description: 'Book added to your cart.' });
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      toast({ title: 'Error', description: 'Failed to add book to cart.' });
+    }
+  };
+
   if (loading) return <p>Loading book details...</p>;
   if (!book) return <p>Book not found.</p>;
 
@@ -76,12 +90,12 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
           <p className="text-xl text-gray-600 mb-4">by {book.author}</p>
           <p className="text-2xl font-bold mb-4">${book.price.toFixed(2)}</p>
           <p className="mb-4">{book.description}</p>
-          <div className="mb-4"><strong>Condition:</strong> {book.condition}</div>
           <div className="mb-4"><strong>Seller:</strong> {book.seller}</div>
           <div className="flex space-x-4">
             <Button variant="outline" onClick={handleToggleWishlist}>
               {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
             </Button>
+            <Button onClick={handleAddToCart}>Add to Cart</Button> {/* Add to Cart Button */}
           </div>
         </div>
       </div>
