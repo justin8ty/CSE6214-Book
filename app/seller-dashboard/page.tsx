@@ -1,53 +1,144 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { auth, db } from '@/config/firebase'
+import { collection, getDocs, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
-
-// Mock data for demonstration
-const initialBooks = [
-  { id: '1', title: 'To Kill a Mockingbird', author: 'Harper Lee', price: 8.99, stock: 5 },
-  { id: '2', title: '1984', author: 'George Orwell', price: 10.99, stock: 3 },
-]
-
-const initialOrders = [
-  { id: '1', bookId: '1', customerName: 'John Doe', status: 'Processing' },
-  { id: '2', bookId: '2', customerName: 'Jane Smith', status: 'Shipped' },
-]
+import { Input } from '@/components/ui/input'
 
 export default function SellerDashboardPage() {
-  const [books, setBooks] = useState(initialBooks)
-  const [orders, setOrders] = useState(initialOrders)
+  const [books, setBooks] = useState<any[]>([])
+  const [isSeller, setIsSeller] = useState<boolean | null>(null)
+  const [sellerData, setSellerData] = useState<any>(null) // Stores seller info
+  const [newBook, setNewBook] = useState({
+    title: '',
+    author: '',
+    price: 0,
+    stock: 1,
+    stockStatus: 'in stock',
+    imgUrl: '/placeholder.svg?height=300&width=200',
+  })
+  const router = useRouter()
+
+  // 🔹 Check if user is a seller
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const userRef = doc(db, 'users', user.uid)
+        const userDoc = await getDoc(userRef)
+
+        if (userDoc.exists() && userDoc.data().role === 'seller') {
+          setIsSeller(true)
+          setSellerData({ id: user.uid, name: userDoc.data().name }) // Store seller info
+          fetchBooks()
+        } else {
+          setIsSeller(false)
+        }
+      } else {
+        setIsSeller(false)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  // 🔹 Fetch books from Firestore
+  const fetchBooks = async () => {
+    try {
+      const booksSnapshot = await getDocs(collection(db, 'bookDetails'))
+      setBooks(booksSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
+    } catch (error) {
+      console.error('Error fetching books:', error)
+    }
+  }
+
+  // 🔹 Update book stock & status
+  const handleUpdateBook = async (bookId: string, newStock: number, newStatus: string) => {
+    try {
+      const bookRef = doc(db, 'bookDetails', bookId)
+      await updateDoc(bookRef, { stock: newStock, stockStatus: newStatus })
+
+      setBooks((prevBooks) =>
+        prevBooks.map((book) =>
+          book.id === bookId ? { ...book, stock: newStock, stockStatus: newStatus } : book
+        )
+      )
+    } catch (error) {
+      console.error('Error updating book:', error)
+    }
+  }
+
+  // 🔹 Handle input changes for new book
+  const handleInputChange = (e: any) => {
+    setNewBook({ ...newBook, [e.target.name]: e.target.value })
+  }
+
+  // 🔹 Handle adding new book to Firestore
+  const handleAddBook = async () => {
+    if (!sellerData) return
+
+    const bookData = {
+      ...newBook,
+      price: Number(newBook.price),
+      stock: Number(newBook.stock),
+      seller: sellerData.name,
+      sellerId: sellerData.id,
+      cart: '0',
+      wishlist: '0',
+      shipStatus: 'processing',
+      status: 'approved',
+    }
+
+    try {
+      await addDoc(collection(db, 'bookDetails'), bookData)
+      fetchBooks()
+      setNewBook({
+        title: '',
+        author: '',
+        price: 0,
+        stock: 1,
+        stockStatus: 'in stock',
+        imgUrl: '/placeholder.svg?height=300&width=200',
+      })
+    } catch (error) {
+      console.error('Error adding book:', error)
+    }
+  }
+
+  if (isSeller === null) return <div>Loading...</div>
+  if (!isSeller) return <div>Access Denied. You are not a seller.</div>
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Seller Dashboard</h1>
-        <div className="flex gap-4">
-          <Link href="/seller/manage-orders">
-            <Button>Manage Orders</Button>
-          </Link>
-          <Link href="/seller/track-orders">
-            <Button>Track Orders</Button>
-          </Link>
-          <Link href="/seller/view-feedback">
-            <Button>View Feedback</Button>
-          </Link>
+      <h1 className="text-3xl font-bold mb-6">Seller Dashboard</h1>
+
+      {/* 📌 Add New Book Form */}
+      <section className="mb-8">
+        <h2 className="text-2xl font-semibold mb-4">Add New Book</h2>
+        <div className="grid grid-cols-2 gap-4">
+          <Input type="text" name="title" value={newBook.title} onChange={handleInputChange} placeholder="Title" />
+          <Input type="text" name="author" value={newBook.author} onChange={handleInputChange} placeholder="Author" />
+          <Input type="number" name="price" value={newBook.price} onChange={handleInputChange} placeholder="Price" />
+          <Input type="number" name="stock" value={newBook.stock} onChange={handleInputChange} placeholder="Stock" />
+          <select name="stockStatus" value={newBook.stockStatus} onChange={handleInputChange}>
+            <option value="in stock">In Stock</option>
+            <option value="out of stock">Out of Stock</option>
+          </select>
+          <Input type="text" name="imgUrl" value={newBook.imgUrl} onChange={handleInputChange} placeholder="Image URL" />
         </div>
-      </div>
-      
+        <Button className="mt-4" onClick={handleAddBook}>Add Book</Button>
+      </section>
+
+      {/* 📌 Books List */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">My Books</h2>
-        <Link href="/add-book">
-          <Button>Add New Book</Button>
-        </Link>
-        <table className="w-full mt-4">
+        <table className="w-full">
           <thead>
             <tr>
               <th className="text-left">Title</th>
-              <th className="text-left">Author</th>
-              <th className="text-left">Price</th>
               <th className="text-left">Stock</th>
+              <th className="text-left">Status</th>
               <th className="text-left">Actions</th>
             </tr>
           </thead>
@@ -55,39 +146,24 @@ export default function SellerDashboardPage() {
             {books.map((book) => (
               <tr key={book.id}>
                 <td>{book.title}</td>
-                <td>{book.author}</td>
-                <td>${book.price.toFixed(2)}</td>
-                <td>{book.stock}</td>
                 <td>
-                  <Button variant="outline" size="sm">Edit</Button>
+                  <Input
+                    type="number"
+                    value={book.stock}
+                    onChange={(e) => handleUpdateBook(book.id, Number(e.target.value), book.stockStatus)}
+                  />
                 </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Recent Orders</h2>
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="text-left">Order ID</th>
-              <th className="text-left">Book</th>
-              <th className="text-left">Customer</th>
-              <th className="text-left">Status</th>
-              <th className="text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order.id}>
-                <td>{order.id}</td>
-                <td>{books.find(book => book.id === order.bookId)?.title}</td>
-                <td>{order.customerName}</td>
-                <td>{order.status}</td>
                 <td>
-                  <Button variant="outline" size="sm">Update Status</Button>
+                  <select
+                    value={book.stockStatus}
+                    onChange={(e) => handleUpdateBook(book.id, book.stock, e.target.value)}
+                  >
+                    <option value="in stock">In Stock</option>
+                    <option value="out of stock">Out of Stock</option>
+                  </select>
+                </td>
+                <td>
+                  <Button onClick={() => handleUpdateBook(book.id, book.stock, book.stockStatus)}>Save</Button>
                 </td>
               </tr>
             ))}
