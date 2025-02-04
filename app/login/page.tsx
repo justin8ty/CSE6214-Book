@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { db, auth } from "@/config/firebase"; // Import db and auth
+import { db, auth } from "@/config/firebase";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore"; // Add Firestore methods for role check
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
-  const authInstance = getAuth(); // Initialize Firebase auth
+  const authInstance = getAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,16 +33,17 @@ export default function LoginPage() {
         description: "Redirecting to your dashboard...",
       });
 
-      // After successful login, redirect based on user role
+      // After successful login, check user role
       const user = authInstance.currentUser;
       if (user) {
-        // Get user role from Firestore
-        const role = await getUserRole(user.uid);
-        
+        const role = await getUserRole(user.uid, email);
+
         if (role === "admin") {
           router.push("/admin-dashboard");
+        } else if (role === "seller") {
+          router.push("/seller-dashboard"); // Redirect to seller dashboard
         } else {
-          router.push("/UserDashboard");
+          router.push("/UserDashboard"); // Default to user dashboard
         }
       }
     } catch (error: any) {
@@ -50,17 +51,30 @@ export default function LoginPage() {
     }
   };
 
-  // Function to get user role from Firestore (adjust according to your Firestore structure)
-  const getUserRole = async (uid: string) => {
+  // Function to get user role from Firestore
+  const getUserRole = async (uid: string, email: string) => {
     try {
+      // Check the sellers collection first
+      const sellersQuery = query(collection(db, "sellers"), where("email", "==", email));
+      const sellersSnapshot = await getDocs(sellersQuery);
+
+      if (!sellersSnapshot.empty) {
+        const sellerData = sellersSnapshot.docs[0].data();
+        if (sellerData.status === "Approved") {
+          return "seller"; // If seller is approved, return "seller"
+        }
+      }
+
+      // Check the users collection
       const userDocRef = doc(db, "users", uid);
       const userDoc = await getDoc(userDocRef);
+
       if (userDoc.exists()) {
         const userData = userDoc.data();
         return userData?.role || "user"; // Default to "user" if no role is found
-      } else {
-        throw new Error("User not found");
       }
+
+      return "user"; // Default role if no records found
     } catch (error) {
       console.error("Error fetching user role:", error);
       return "user"; // Default fallback
