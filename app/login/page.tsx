@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { db, auth } from "@/config/firebase";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -25,7 +26,6 @@ export default function LoginPage() {
     }
 
     try {
-      // Firebase authentication
       await signInWithEmailAndPassword(authInstance, email, password);
 
       toast({
@@ -33,7 +33,6 @@ export default function LoginPage() {
         description: "Redirecting to your dashboard...",
       });
 
-      // After successful login, check user role
       const user = authInstance.currentUser;
       if (user) {
         const role = await getUserRole(user.uid, email);
@@ -41,9 +40,9 @@ export default function LoginPage() {
         if (role === "admin") {
           router.push("/admin-dashboard");
         } else if (role === "seller") {
-          router.push("/seller-dashboard"); // Redirect to seller dashboard
+          router.push("/seller-dashboard");
         } else {
-          router.push("/UserDashboard"); // Default to user dashboard
+          router.push("/UserDashboard");
         }
       }
     } catch (error: any) {
@@ -51,33 +50,30 @@ export default function LoginPage() {
     }
   };
 
-  // Function to get user role from Firestore
   const getUserRole = async (uid: string, email: string) => {
     try {
-      // Check the sellers collection first
       const sellersQuery = query(collection(db, "sellers"), where("email", "==", email));
       const sellersSnapshot = await getDocs(sellersQuery);
 
       if (!sellersSnapshot.empty) {
         const sellerData = sellersSnapshot.docs[0].data();
         if (sellerData.status === "Approved") {
-          return "seller"; // If seller is approved, return "seller"
+          return "seller";
         }
       }
 
-      // Check the users collection
       const userDocRef = doc(db, "users", uid);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        return userData?.role || "user"; // Default to "user" if no role is found
+        return userData?.role || "user";
       }
 
-      return "user"; // Default role if no records found
+      return "user";
     } catch (error) {
       console.error("Error fetching user role:", error);
-      return "user"; // Default fallback
+      return "user";
     }
   };
 
@@ -106,7 +102,12 @@ export default function LoginPage() {
           />
         </div>
         {error && <div className="text-red-600 text-sm mb-4">{error}</div>}
-        <Button type="submit">Login</Button>
+        <Button type="submit" className="w-full">Login</Button>
+        <div className="mt-4 text-center">
+          <Link href="/account-recovery" className="text-blue-500 hover:underline">
+            Forgot Password?
+          </Link>
+        </div>
       </form>
     </div>
   );
