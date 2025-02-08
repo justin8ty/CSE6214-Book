@@ -43,7 +43,7 @@ export default function Home() {
         <div className="bg-blue-100 p-6 rounded-lg">
           <h2 className="text-2xl font-semibold mb-4">Buy Books</h2>
           <p className="mb-4">Find your next favorite book from our vast collection of secondhand titles.</p>
-          <Link href="/all-books">
+          <Link href="/browse">
             <Button>Start Browsing</Button>
           </Link>
         </div>
