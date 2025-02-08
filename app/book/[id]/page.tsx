@@ -110,7 +110,7 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div>
           <Image
-            src={book.imageUrl}
+            src={book.imgUrl}
             alt={book.title}
             width={400}
             height={600}
