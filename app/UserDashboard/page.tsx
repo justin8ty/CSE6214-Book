@@ -110,9 +110,6 @@ export default function UserDashboard() {
           <p><strong>Name:</strong> {userData.name}</p>
           <p><strong>Email:</strong> {userData.email}</p>
           <p><strong>Member Since:</strong> {userData.createdAt.toDate().toLocaleDateString()}</p>
-          <Link href="/profile">
-            <Button className="mt-4 w-full">Edit Profile</Button>
-          </Link>
         </CardContent>
       </Card>
 
