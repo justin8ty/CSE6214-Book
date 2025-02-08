@@ -16,9 +16,10 @@ export default function SellerDashboardPage() {
   const [newBook, setNewBook] = useState({
     title: '',
     author: '',
-    price: 0,
-    stock: 1,
+    price: '',
+    stock: '',
     stockStatus: 'in stock',
+    description: '',
     imgUrl: '/placeholder.svg?height=300&width=200',
   })
   const router = useRouter()
@@ -50,7 +51,11 @@ export default function SellerDashboardPage() {
   const fetchBooks = async () => {
     try {
       const booksSnapshot = await getDocs(collection(db, 'bookDetails'))
-      setBooks(booksSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
+      const filteredBooks = booksSnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((book) => book.status === "approved") // Only approved books
+  
+      setBooks(filteredBooks)
     } catch (error) {
       console.error('Error fetching books:', error)
     }
@@ -103,7 +108,7 @@ export default function SellerDashboardPage() {
       cart: '0',
       wishlist: '0',
       shipStatus: 'processing',
-      status: 'approved',
+      status: 'pending',
       orderPlaced: "0",
     }
 
@@ -113,9 +118,10 @@ export default function SellerDashboardPage() {
       setNewBook({
         title: '',
         author: '',
-        price: 0,
-        stock: 1,
+        price: '',
+        stock: '',
         stockStatus: 'in stock',
+        description: '',
         imgUrl: '/placeholder.svg?height=300&width=200',
       })
     } catch (error) {
@@ -158,6 +164,7 @@ export default function SellerDashboardPage() {
           <Input type="text" name="author" value={newBook.author} onChange={handleInputChange} placeholder="Author" />
           <Input type="number" name="price" value={newBook.price} onChange={handleInputChange} placeholder="Price" />
           <Input type="number" name="stock" value={newBook.stock} onChange={handleInputChange} placeholder="Stock" />
+          <Input type="text" name="description" value={newBook.description} onChange={handleInputChange} placeholder="Description" />
           <select name="stockStatus" value={newBook.stockStatus} onChange={handleInputChange}>
             <option value="in stock">In Stock</option>
             <option value="out of stock">Out of Stock</option>
