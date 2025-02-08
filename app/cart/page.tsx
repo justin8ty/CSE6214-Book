@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { getAuth } from "firebase/auth"
 import { db } from "@/config/firebase"
 import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
+import { useRouter } from 'next/navigation' 
 
 export default function CartPage() {
   const [cart, setCart] = useState([])
@@ -15,6 +16,8 @@ export default function CartPage() {
   useEffect(() => {
     fetchCartItems()
   }, [])
+
+  const router = useRouter();
 
   const fetchCartItems = async () => {
     try {
@@ -75,6 +78,7 @@ export default function CartPage() {
       title: "Success",
       description: "Proceeding to checkout.",
     })
+    router.push('/payment');
   }
 
   return (
