@@ -6,6 +6,7 @@ import { auth, db } from '@/config/firebase'
 import { collection, getDocs, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import Link from 'next/link'
 
 export default function SellerDashboardPage() {
   const [books, setBooks] = useState<any[]>([])
@@ -146,6 +147,11 @@ export default function SellerDashboardPage() {
 
       {/* 📌 Add New Book Form */}
       <section className="mb-8">
+        <div className="flex items-center justify-between mb-8">
+          <Link href="/seller/view-feedback">
+            <Button>View Feedback</Button>
+          </Link>
+        </div>
         <h2 className="text-2xl font-semibold mb-4">Add New Book</h2>
         <div className="grid grid-cols-2 gap-4">
           <Input type="text" name="title" value={newBook.title} onChange={handleInputChange} placeholder="Title" />
