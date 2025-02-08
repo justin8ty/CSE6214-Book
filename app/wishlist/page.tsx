@@ -27,7 +27,7 @@ export default function WishlistPage() {
           {wishlist.map((book) => (
             <Card key={book.id} className="p-4">
               <CardContent>
-                <img src={book.imageUrl} alt={book.title} className="w-full h-48 object-cover mb-4 rounded" />
+                <img src={book.imgUrl} alt={book.title} className="w-full h-48 object-cover mb-4 rounded" />
                 <h2 className="text-lg font-semibold">{book.title}</h2>
                 <p className="text-gray-600">by {book.author}</p>
                 <p className="text-gray-800 font-bold">${book.price}</p>

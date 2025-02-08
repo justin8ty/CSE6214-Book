@@ -104,7 +104,7 @@ export default function WishlistPage() {
               {wishlistBooks.map((book) => (
                 <div key={book.id} className="border rounded-lg overflow-hidden shadow-sm">
                   <Image
-                    src={book.imageUrl}
+                    src={book.imgUrl}
                     alt={book.title}
                     width={180}
                     height={270}

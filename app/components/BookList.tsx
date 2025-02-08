@@ -30,7 +30,7 @@ export default function BookList({ books, onAddToCart }: BookListProps) {
       {books.map((book) => (
         <div key={book.id} className="border rounded-lg overflow-hidden shadow-lg">
           <Image
-            src={book.imageUrl}
+            src={book.imgUrl}
             alt={book.title}
             width={200}
             height={300}
