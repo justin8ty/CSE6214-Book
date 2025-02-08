@@ -22,7 +22,7 @@ export default function Header() {
     setUserRole('guest')
   }
 
-  const navItems = ['Browse', 'Books', 'Account']
+  const navItems = ['Browse', 'Account']
   if (isLoggedIn && (userRole === 'seller' || userRole === 'admin')) {
     navItems.push('Seller')
   }
@@ -51,36 +51,10 @@ export default function Header() {
                       <Link href="/browse">All Books</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/categories">Categories</Link>
+                      <Link href="/wishlist">Wishlist (Guest)</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/new-arrivals">New Arrivals</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/bestsellers">Bestsellers</Link>
-                    </DropdownMenuItem>
-                    {/* Added Wishlist and Wishlist1 links */}
-                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/wishlist">Wishlist</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/wishlist1">Wishlist1</Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {item === 'Books' && (
-                  <>
-                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/search">Search Books</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/book-details">Book Details</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/reviews">Reviews</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="hover:bg-teal-50 focus:bg-teal-50 text-teal-800">
-                      <Link href="/recommendations">Recommendations</Link>
+                      <Link href="/wishlist1">Wishlist (User)</Link>
                     </DropdownMenuItem>
                   </>
                 )}
