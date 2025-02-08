@@ -199,7 +199,7 @@ export default function UserDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-gray-600">Manage your payment options</p>
-            <Link href="/payment-methods">
+            <Link href="/payment">
               <Button className="mt-4 w-full">Manage Payments</Button>
             </Link>
           </CardContent>

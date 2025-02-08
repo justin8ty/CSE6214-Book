@@ -43,14 +43,14 @@ export default function Home() {
         <div className="bg-blue-100 p-6 rounded-lg">
           <h2 className="text-2xl font-semibold mb-4">Buy Books</h2>
           <p className="mb-4">Find your next favorite book from our vast collection of secondhand titles.</p>
-          <Link href="/search">
+          <Link href="/register">
             <Button>Start Browsing</Button>
           </Link>
         </div>
         <div className="bg-green-100 p-6 rounded-lg">
           <h2 className="text-2xl font-semibold mb-4">Sell Books</h2>
           <p className="mb-4">Turn your old books into cash by selling them on our platform.</p>
-          <Link href="/sell">
+          <Link href="/seller-register">
             <Button>Start Selling</Button>
           </Link>
         </div>
