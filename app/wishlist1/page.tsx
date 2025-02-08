@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/config/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { getAuth } from 'firebase/auth'; // Firebase Authentication to check if user is logged in
@@ -25,6 +25,29 @@ export default function WishlistPage() {
       setIsLoggedIn(false);
     }
   }, []);
+
+  const handleRemoveFromWishlist = async (bookId: string) => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+  
+      if (!user) {
+        toast({ title: "Error", description: "You must be logged in to remove items from wishlist." });
+        return;
+      }
+  
+      const bookRef = doc(db, 'bookDetails', bookId);
+      await updateDoc(bookRef, { wishlist: "0" }); // Update Firestore wishlist field
+  
+      setWishlistBooks(wishlistBooks.filter((book) => book.id !== bookId)); // Remove from UI
+  
+      toast({ title: "Removed", description: "Book removed from wishlist." });
+    } catch (error) {
+      console.error('Error removing book from wishlist:', error);
+      toast({ title: "Error", description: "Failed to remove book from wishlist." });
+    }
+  };
+  
 
   const fetchWishlistBooks = async () => {
     try {
@@ -73,9 +96,9 @@ export default function WishlistPage() {
                     <p className="text-sm text-gray-600 mb-2">{book.author}</p>
                     <p className="text-lg font-bold mb-4">${book.price.toFixed(2)}</p>
                     <div className="flex justify-between">
-                      <Button variant="outline" onClick={() => { /* Add remove wishlist logic if needed */ }}>
-                        Remove from Wishlist
-                      </Button>
+                    <Button variant="outline" onClick={() => handleRemoveFromWishlist(book.id)}>
+                      Remove from Wishlist
+                    </Button>
                       <Button onClick={() => { /* Add to cart logic */ }}>
                         Add to Cart
                       </Button>
