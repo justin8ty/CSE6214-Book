@@ -134,32 +134,32 @@ export default function AdminDashboardPage() {
 
       {/* Product Verification */}
       <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Product Verification</h2>
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="text-left">Title</th>
-              <th className="text-left">Seller</th>
-              <th className="text-left">Status</th>
-              <th className="text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product.id}>
-                <td>{product.title}</td>
-                <td>{product.seller}</td>
-                <td>{product.status || 'Pending'}</td>
-                <td>
-                  {(!product.status || product.status === 'Pending') && (
-                    <Button onClick={() => handleApproveProduct(product.id)}>Approve</Button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+  <h2 className="text-2xl font-semibold mb-4">Product Verification</h2>
+  <table className="w-full">
+    <thead>
+      <tr>
+        <th className="text-left">Title</th>
+        <th className="text-left">Seller</th>
+        <th className="text-left">Status</th>
+        <th className="text-left">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {products.map((product) => (
+        <tr key={product.id}>
+          <td>{product.title}</td>
+          <td>{product.seller}</td>
+          <td>{product.status ? product.status : 'pending'}</td>
+          <td>
+            {(!product.status || product.status.toLowerCase() === 'pending') && (
+              <Button onClick={() => handleApproveProduct(product.id)}>approve</Button>
+            )}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</section>
 
       {/* Feedback Section */}
       <section>
