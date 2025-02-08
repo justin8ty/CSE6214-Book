@@ -47,7 +47,26 @@ export default function WishlistPage() {
       toast({ title: "Error", description: "Failed to remove book from wishlist." });
     }
   };
+
+  const handleAddToCart = async (bookId: string) => {
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
   
+      if (!user) {
+        toast({ title: "Error", description: "You must be logged in to add items to cart." });
+        return;
+      }
+  
+      const bookRef = doc(db, 'bookDetails', bookId);
+      await updateDoc(bookRef, { cart: "1" }); // Update Firestore cart field
+  
+      toast({ title: "Added to Cart", description: "Book added to your cart." });
+    } catch (error) {
+      console.error('Error adding book to cart:', error);
+      toast({ title: "Error", description: "Failed to add book to cart." });
+    }
+  };
 
   const fetchWishlistBooks = async () => {
     try {
@@ -99,9 +118,9 @@ export default function WishlistPage() {
                     <Button variant="outline" onClick={() => handleRemoveFromWishlist(book.id)}>
                       Remove from Wishlist
                     </Button>
-                      <Button onClick={() => { /* Add to cart logic */ }}>
-                        Add to Cart
-                      </Button>
+                    <Button onClick={() => handleAddToCart(book.id)}>
+                      Add to Cart
+                    </Button>
                     </div>
                   </div>
                 </div>
