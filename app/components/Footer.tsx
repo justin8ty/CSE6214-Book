@@ -14,18 +14,8 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/search" className="hover:text-teal-200 transition-colors">Search Books</Link></li>
-              <li><Link href="/sell" className="hover:text-teal-200 transition-colors">Sell Books</Link></li>
-              <li><Link href="/faq" className="hover:text-teal-200 transition-colors">FAQ</Link></li>
-              <li><Link href="/contact" className="hover:text-teal-200 transition-colors">Contact Us</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
-            <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-teal-200 transition-colors">Facebook</a></li>
-              <li><a href="#" className="hover:text-teal-200 transition-colors">Twitter</a></li>
-              <li><a href="#" className="hover:text-teal-200 transition-colors">Instagram</a></li>
+              <li><Link href="/browse" className="hover:text-teal-200 transition-colors">All Books</Link></li>
+              <li><Link href="/seller-register" className="hover:text-teal-200 transition-colors">Sell Books</Link></li>
             </ul>
           </div>
         </div>
