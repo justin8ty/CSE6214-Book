@@ -20,7 +20,7 @@ export default function SellerDashboardPage() {
     stock: '',
     stockStatus: 'in stock',
     description: '',
-    imgUrl: '/placeholder.svg?height=300&width=200',
+    imgUrl: '',
   })
   const router = useRouter()
 
@@ -122,7 +122,7 @@ export default function SellerDashboardPage() {
         stock: '',
         stockStatus: 'in stock',
         description: '',
-        imgUrl: '/placeholder.svg?height=300&width=200',
+        imgUrl: '',
       })
     } catch (error) {
       console.error('Error adding book:', error)
@@ -165,6 +165,7 @@ export default function SellerDashboardPage() {
           <Input type="number" name="price" value={newBook.price} onChange={handleInputChange} placeholder="Price" />
           <Input type="number" name="stock" value={newBook.stock} onChange={handleInputChange} placeholder="Stock" />
           <Input type="text" name="description" value={newBook.description} onChange={handleInputChange} placeholder="Description" />
+          <Input type="text" name="imgUrl" value={newBook.imgUrl} onChange={handleInputChange} placeholder="Image URL" />
           <select name="stockStatus" value={newBook.stockStatus} onChange={handleInputChange}>
             <option value="in stock">In Stock</option>
             <option value="out of stock">Out of Stock</option>
