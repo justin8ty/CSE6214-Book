@@ -66,7 +66,7 @@ export default function AdminDashboardPage() {
 
   // Approve seller application
   const handleApproveApplication = async (id: string) => {
-    await updateDoc(doc(db, 'users', id), { status: 'Approved' });
+    await updateDoc(doc(db, 'users', id), { status: 'approved' });
     fetchData();
     toast({ title: 'Success', description: 'Seller application approved.' });
   };
@@ -80,14 +80,14 @@ export default function AdminDashboardPage() {
 
 // Reject seller application
 const handleRejectApplication = async (id: string) => {
-  await updateDoc(doc(db, 'users', id), { status: 'Rejected' });
+  await updateDoc(doc(db, 'users', id), { status: 'rejected' });
   fetchData(); // Refresh the data
   toast({ title: 'Seller Rejected', description: 'Seller application has been rejected.' });
 };
 
 // Reject prod verify
 const handleRejectProduct = async (id: string) => {
-  await updateDoc(doc(db, 'bookDetails', id), { status: 'Rejected' });
+  await updateDoc(doc(db, 'bookDetails', id), { status: 'rejected' });
   fetchData(); // Refresh the product list
   toast({ title: 'Product Rejected', description: 'Product has been rejected.' });
 };
@@ -95,7 +95,7 @@ const handleRejectProduct = async (id: string) => {
 
   // Approve product listing
   const handleApproveProduct = async (id: string) => {
-    await updateDoc(doc(db, 'bookDetails', id), { status: 'Approved' });
+    await updateDoc(doc(db, 'bookDetails', id), { status: 'approved' });
     fetchData();
     toast({ title: 'Success', description: 'Product approved.' });
   };
