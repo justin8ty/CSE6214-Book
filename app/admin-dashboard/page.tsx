@@ -22,18 +22,26 @@ export default function AdminDashboardPage() {
         getDocs(collection(db, 'bookDetails')),
         getDocs(collection(db, 'complaints'))
       ]);
-
+  
       const usersData = usersSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setUsers(usersData);
-
-      setSellerApplications(usersData.filter(users => users.role === "seller" && users.status === "Pending"));
-
+  
+      // Include `description` field while filtering seller applications
+      setSellerApplications(usersData.filter(users => users.role === "seller" && users.status === "Pending")
+        .map(users => ({
+          id: users.id,
+          email: users.email,
+          description: users.description || 'No description provided' // Handle undefined cases
+        }))
+      );
+  
       setProducts(productsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       setFeedback(feedbackSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
+  
 
   // Check if user is admin
   useEffect(() => {
@@ -85,27 +93,30 @@ export default function AdminDashboardPage() {
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
       {/* Seller Applications */}
-      <section className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Seller Applications</h2>
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="text-left">Email</th>
-              <th className="text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sellerApplications.map((app) => (
-              <tr key={app.id}>
-                <td>{app.email}</td>
-                <td>
-                  <Button onClick={() => handleApproveApplication(app.id)}>Approve</Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+<section className="mb-8">
+  <h2 className="text-2xl font-semibold mb-4">Seller Applications</h2>
+  <table className="w-full">
+    <thead>
+      <tr>
+        <th className="text-left">Email</th>
+        <th className="text-left">Description</th>
+        <th className="text-left">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {sellerApplications.map((app) => (
+        <tr key={app.id}>
+          <td>{app.email}</td>
+          <td>{app.description}</td>
+          <td>
+            <Button onClick={() => handleApproveApplication(app.id)}>Approve</Button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</section>
+
 
       {/* User Management */}
       <section className="mb-8">
