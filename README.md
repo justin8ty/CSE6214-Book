@@ -12,7 +12,7 @@ npm install next react react-dom firebase react-firebase-hooks
 npm install tailwindcss postcss autoprefixer @shadcn/ui @radix-ui/react-icons
 ```
 
-Create `firebase.js` env file:
+Create `firebase.js` env file in /config:
 
 ```
 import { initializeApp } from "firebase/app";
