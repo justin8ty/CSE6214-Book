@@ -20,7 +20,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-teal-400 text-center text-sm text-teal-100">
-          <p>&copy; 2023 Thriftbooks. All rights reserved.</p>
+          <p>&copy; 2024 Thriftbooks. All rights reserved.</p>
         </div>
       </div>
     </footer>
