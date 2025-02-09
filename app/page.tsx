@@ -55,6 +55,24 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      <section className="text-center">
+        <h2 className="text-2xl font-semibold mb-4">Why Choose Thriftbooks?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Wide Selection</h3>
+            <p>Browse through thousands of titles across various genres.</p>
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Great Prices</h3>
+            <p>Find amazing deals on secondhand books.</p>
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Easy to Use</h3>
+            <p>Our platform makes buying and selling books a breeze.</p>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
