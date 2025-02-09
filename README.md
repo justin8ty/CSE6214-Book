@@ -6,8 +6,11 @@ This is a book-selling platform.
 
 ## Setup
 
+`npm create` only done on project initial setup.
+
 ```
 npm create vite@latest
+npm init
 npm install next react react-dom firebase react-firebase-hooks
 npm install tailwindcss postcss autoprefixer @shadcn/ui @radix-ui/react-icons
 ```
