@@ -53,7 +53,7 @@ export default function SearchPage() {
           {books.map(book => (
             <div key={book.id} className="border rounded-lg overflow-hidden shadow-lg">
               <Image
-                src={book.imageUrl} // Changed from imgUrl to imageUrl
+                src={book.imgUrl} // Changed from imgUrl to imageUrl
                 alt={book.title}
                 width={200}
                 height={300}
@@ -73,7 +73,7 @@ export default function SearchPage() {
           ))}
         </div>
       ) : (
-        <p>No books found.</p>
+        <p>No books found. Please try again.</p>
       )}
     </div>
   );
