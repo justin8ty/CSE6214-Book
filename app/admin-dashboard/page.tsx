@@ -85,6 +85,13 @@ const handleRejectApplication = async (id: string) => {
   toast({ title: 'Seller Rejected', description: 'Seller application has been rejected.' });
 };
 
+// Reject prod verify
+const handleRejectProduct = async (id: string) => {
+  await updateDoc(doc(db, 'bookDetails', id), { status: 'Rejected' });
+  fetchData(); // Refresh the product list
+  toast({ title: 'Product Rejected', description: 'Product has been rejected.' });
+};
+
 
   // Approve product listing
   const handleApproveProduct = async (id: string) => {
@@ -175,7 +182,12 @@ const handleRejectApplication = async (id: string) => {
           <td>{product.status ? product.status : 'pending'}</td>
           <td>
             {(!product.status || product.status.toLowerCase() === 'pending') && (
-              <Button onClick={() => handleApproveProduct(product.id)}>approve</Button>
+              <>
+                <Button onClick={() => handleApproveProduct(product.id)}>Approve</Button>
+                <Button variant="destructive" onClick={() => handleRejectProduct(product.id)} className="ml-2">
+                  Reject
+                </Button>
+              </>
             )}
           </td>
         </tr>
