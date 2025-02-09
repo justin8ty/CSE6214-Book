@@ -1,4 +1,4 @@
-# Thriftbook
+# Thriftbooks
 
 This is a book-selling platform.
 
