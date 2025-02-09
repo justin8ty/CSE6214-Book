@@ -78,6 +78,14 @@ export default function AdminDashboardPage() {
     toast({ title: 'Success', description: 'User account removed.' });
   };
 
+// Reject seller application
+const handleRejectApplication = async (id: string) => {
+  await updateDoc(doc(db, 'users', id), { status: 'Rejected' });
+  fetchData(); // Refresh the data
+  toast({ title: 'Seller Rejected', description: 'Seller application has been rejected.' });
+};
+
+
   // Approve product listing
   const handleApproveProduct = async (id: string) => {
     await updateDoc(doc(db, 'bookDetails', id), { status: 'Approved' });
@@ -92,7 +100,7 @@ export default function AdminDashboardPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
-      {/* Seller Applications */}
+{/* Seller Applications */}
 <section className="mb-8">
   <h2 className="text-2xl font-semibold mb-4">Seller Applications</h2>
   <table className="w-full">
@@ -110,12 +118,16 @@ export default function AdminDashboardPage() {
           <td>{app.description}</td>
           <td>
             <Button onClick={() => handleApproveApplication(app.id)}>Approve</Button>
+            <Button variant="destructive" onClick={() => handleRejectApplication(app.id)} className="ml-2">
+              Reject
+            </Button>
           </td>
         </tr>
       ))}
     </tbody>
   </table>
 </section>
+
 
 
       {/* User Management */}
