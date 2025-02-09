@@ -24,20 +24,24 @@ export default function SearchPage() {
     setLoading(true);
     try {
       const booksRef = collection(db, 'bookDetails');
-      const q = query(booksRef, where('title', '>=', searchQuery), where('title', '<=', searchQuery + '\uf8ff'));
-      const querySnapshot = await getDocs(q);
-
-      const booksData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
+      const querySnapshot = await getDocs(booksRef);
+  
+      const lowerCaseQuery = searchQuery.toLowerCase(); // Convert search input to lowercase
+  
+      const booksData = querySnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter(book => book.title.toLowerCase().includes(lowerCaseQuery)); // Compare in lowercase
+  
       setBooks(booksData);
     } catch (error) {
       console.error('Error fetching books:', error);
     }
     setLoading(false);
   };
+  
 
   return (
     <div className="container mx-auto px-4 py-8">
