@@ -3,27 +3,39 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/components/ui/use-toast'
+import { getAuth, signOut } from 'firebase/auth'
 
 export default function LogoutPage() {
   const router = useRouter()
   const { toast } = useToast()
 
   useEffect(() => {
-    // Here you would typically clear the user's session
-    console.log('Logging out user')
-    
-    // Show a toast notification
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    })
+    const auth = getAuth()
 
-    // Redirect to home page after a short delay
-    const timer = setTimeout(() => {
-      router.push('/')
-    }, 2000)
+    signOut(auth)
+      .then(() => {
+        console.log('User successfully logged out')
 
-    return () => clearTimeout(timer)
+        // Show a toast notification
+        toast({
+          title: 'Logged Out',
+          description: 'You have been successfully logged out.',
+        })
+
+        // Redirect to home page after a short delay
+        setTimeout(() => {
+          router.push('/')
+        }, 2000)
+      })
+      .catch((error) => {
+        console.error('Logout failed:', error)
+
+        toast({
+          title: 'Logout Failed',
+          description: 'Something went wrong. Please try again.',
+          variant: 'destructive',
+        })
+      })
   }, [router, toast])
 
   return (
@@ -33,4 +45,3 @@ export default function LogoutPage() {
     </div>
   )
 }
-
