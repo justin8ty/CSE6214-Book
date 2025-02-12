@@ -17,7 +17,7 @@ export default function CartPage() {
     fetchCartItems()
   }, [])
 
-  const router = useRouter();
+  const router = useRouter()
 
   const fetchCartItems = async () => {
     try {
@@ -69,16 +69,40 @@ export default function CartPage() {
       })
     }
   }
-  
 
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-  const handleCheckout = () => {
-    toast({
-      title: "Success",
-      description: "Proceeding to checkout.",
-    })
-    router.push('/payment');
+  const handleCheckout = async () => {
+    try {
+      const auth = getAuth()
+      const user = auth.currentUser
+
+      if (!user) {
+        toast({ title: "Error", description: "You must be logged in to checkout." })
+        return
+      }
+
+      // Update orderPlaced field for all books in the cart
+      const updatePromises = cart.map((item) => {
+        const bookRef = doc(db, 'bookDetails', item.id)
+        return updateDoc(bookRef, { orderPlaced: "1" })
+      })
+
+      await Promise.all(updatePromises)
+
+      toast({
+        title: "Success",
+        description: "Your order has been placed.",
+      })
+
+      router.push('/payment')
+    } catch (error) {
+      console.error('Error during checkout:', error)
+      toast({
+        title: "Error",
+        description: "Checkout failed. Please try again.",
+      })
+    }
   }
 
   return (
