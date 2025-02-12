@@ -132,17 +132,17 @@ export default function Header() {
             </DropdownMenu>
           ))}
         </nav>
-        {/* <div className="flex items-center space-x-4">
-          <Link href="/cart" className="hover:text-teal-200 transition-colors">
+        <div className="flex items-center space-x-4">
+          {/* <Link href="/cart" className="hover:text-teal-200 transition-colors">
             <ShoppingCart className="h-6 w-6" />
-          </Link>
+          </Link> */}
           <button
             className="md:hidden text-white hover:text-teal-200 transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
             {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
-        </div> */}
+        </div>
       </div>
       {isMenuOpen && (
         <div className="md:hidden bg-teal-500">
