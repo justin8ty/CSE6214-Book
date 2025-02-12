@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { db } from '@/config/firebase';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
-import BookList from './BookList'; // Assuming this handles the grid and click functionality
+import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
+import BookList from './BookList';
 
 export default function BrowseBooks() {
   const [books, setBooks] = useState([]); // State for Firestore data
@@ -12,49 +12,52 @@ export default function BrowseBooks() {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'bookDetails')); // Fetch Firestore data
+        const booksRef = collection(db, 'bookDetails');
+        const q = query(booksRef, where('status', '==', 'approved')); // Only fetch approved books
+        const querySnapshot = await getDocs(q);
+
         const booksData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
-        setBooks(booksData); // Update state with fetched data
-        setLoading(false); // Loading done
+
+        setBooks(booksData);
       } catch (error) {
-        console.error('Error fetching books:', error); // Handle errors
-        setLoading(false);
+        console.error('Error fetching books:', error);
       }
+      setLoading(false);
     };
 
-    fetchBooks(); // Trigger fetch
+    fetchBooks();
   }, []);
 
   // 🔹 Handle Add to Cart
   const handleAddToCart = async (bookId: string) => {
     try {
       const bookRef = doc(db, 'bookDetails', bookId);
-      await updateDoc(bookRef, { cart: '1' }); // Set cart field to "1"
-      // Optional: Update local state to reflect change without re-fetching
+      await updateDoc(bookRef, { cart: '1' });
+
       setBooks((prevBooks) =>
         prevBooks.map((book) =>
           book.id === bookId ? { ...book, cart: '1' } : book
         )
       );
     } catch (error) {
-      console.error('Error adding to cart:', error); // Handle errors
+      console.error('Error adding to cart:', error);
     }
   };
 
   if (loading) {
-    return <p>Loading books...</p>; // Loading message
+    return <p>Loading books...</p>;
   }
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Browse Books</h1>
       {books.length > 0 ? (
-        <BookList books={books} onAddToCart={handleAddToCart} /> // Pass handler to BookList
+        <BookList books={books} onAddToCart={handleAddToCart} />
       ) : (
-        <p>No books available.</p> // Message if no books are found
+        <p>No books available.</p>
       )}
     </div>
   );
