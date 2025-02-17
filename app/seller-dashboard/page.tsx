@@ -22,6 +22,7 @@ export default function SellerDashboardPage() {
     description: '',
     imgUrl: '',
   })
+  const [toastMessage, setToastMessage] = useState<string | null>(null) // <-- Toast state
   const router = useRouter()
 
   // 🔹 Check if user is a seller
@@ -124,6 +125,11 @@ export default function SellerDashboardPage() {
         description: '',
         imgUrl: '',
       })
+
+      // 🔹 Show toast notification (UI only)
+      setToastMessage('Book added successfully! Pending admin approval.')
+      setTimeout(() => setToastMessage(null), 3000)
+
     } catch (error) {
       console.error('Error adding book:', error)
     }
@@ -151,6 +157,13 @@ export default function SellerDashboardPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Seller Dashboard</h1>
 
+      {/* 🔹 Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-md z-50">
+          {toastMessage}
+        </div>
+      )}
+
       {/* 📌 Add New Book Form */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-8">
@@ -170,7 +183,6 @@ export default function SellerDashboardPage() {
             <option value="in stock">In Stock</option>
             <option value="out of stock">Out of Stock</option>
           </select>
-          {/* <Input type="text" name="imgUrl" value={newBook.imgUrl} onChange={handleInputChange} placeholder="Image URL" /> */}
         </div>
         <Button className="mt-4" onClick={handleAddBook}>Add Book</Button>
       </section>
