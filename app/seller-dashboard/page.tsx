@@ -111,6 +111,14 @@ export default function SellerDashboardPage() {
   const handleAddBook = async () => {
     if (!sellerData) return
 
+    // 🔹 Validation: Ensure required fields are not empty
+    if (!newBook.title.trim() || !newBook.author.trim() || !newBook.price.trim()) {
+      setToastMessage("Title, Author, and Price are required.");
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+
     const bookData = {
       ...newBook,
       price: Number(newBook.price),
@@ -201,9 +209,9 @@ export default function SellerDashboardPage() {
         </div>
         <h2 className="text-2xl font-semibold mb-4">Add New Book</h2>
         <div className="grid grid-cols-2 gap-4">
-          <Input type="text" name="title" value={newBook.title} onChange={handleInputChange} placeholder="Title" />
-          <Input type="text" name="author" value={newBook.author} onChange={handleInputChange} placeholder="Author" />
-          <Input type="number" name="price" value={newBook.price} onChange={handleInputChange} placeholder="Price" />
+          <Input type="text" name="title" value={newBook.title} onChange={handleInputChange} placeholder="Title" required />
+          <Input type="text" name="author" value={newBook.author} onChange={handleInputChange} placeholder="Author" required />
+          <Input type="number" name="price" value={newBook.price} onChange={handleInputChange} placeholder="Price" required />
           <Input type="number" name="stock" value={newBook.stock} onChange={handleInputChange} placeholder="Stock" />
           <Input type="text" name="description" value={newBook.description} onChange={handleInputChange} placeholder="Description" />
           <Input type="text" name="imgUrl" value={newBook.imgUrl} onChange={handleInputChange} placeholder="Image URL" />
