@@ -242,7 +242,7 @@ export default function SellerDashboardPage() {
                     variant="destructive"
                     onClick={() => setBookPending(book.id)}
                   >
-                  Set Pending
+                  Remove Book
                   </Button>
                 </td>
               </tr>
