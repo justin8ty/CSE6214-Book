@@ -68,7 +68,7 @@ export default function SellerDashboardPage() {
       const booksData = booksSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
       // Only show books where orderPlaced === "1" (string)
-      setOrders(booksData.filter((book) => book.orderPlaced === "1"))
+      setOrders(booksData.filter((book) => book.orderPlaced === "1" && book.returnStatus !== "1"))
     } catch (error) {
       console.error('Error fetching orders:', error)
     }
@@ -90,6 +90,17 @@ export default function SellerDashboardPage() {
     }
   }
 
+  const updateReturnStatus = async (bookId: string) => {
+    try {
+      const bookRef = doc(db, 'bookDetails', bookId)
+      await updateDoc(bookRef, { returnStatus: "1" }) // Set returnStatus to "1"
+  
+      fetchOrders() // Refresh orders list
+    } catch (error) {
+      console.error('Error updating return status:', error)
+    }
+  }  
+
   // 🔹 Handle input changes for new book
   const handleInputChange = (e: any) => {
     setNewBook({ ...newBook, [e.target.name]: e.target.value })
@@ -108,6 +119,7 @@ export default function SellerDashboardPage() {
       cart: '0',
       wishlist: '0',
       shipStatus: 'processing',
+      returnStatus: "0",
       status: 'pending',
       orderPlaced: "0",
     }
@@ -143,6 +155,22 @@ export default function SellerDashboardPage() {
       console.error('Error updating ship status:', error)
     }
   }
+
+  const setBookPending = async (bookId: string) => {
+    try {
+      const bookRef = doc(db, 'bookDetails', bookId)
+      await updateDoc(bookRef, { status: "pending" }) // Update status to pending
+  
+      // Update state to reflect the change
+      setBooks((prevBooks) =>
+        prevBooks.map((book) =>
+          book.id === bookId ? { ...book, status: "pending" } : book
+        )
+      )
+    } catch (error) {
+      console.error('Error updating book status:', error)
+    }
+  }  
 
   if (isSeller === null) return <div>Loading...</div>
   if (!isSeller) return <div>Access Denied. You are not a seller.</div>
@@ -209,6 +237,13 @@ export default function SellerDashboardPage() {
                 </td>
                 <td>
                   <Button onClick={() => handleUpdateBook(book.id, book.stock, book.stockStatus)}>Save</Button>
+                  <Button 
+                    className="ml-2" 
+                    variant="destructive"
+                    onClick={() => setBookPending(book.id)}
+                  >
+                  Set Pending
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -218,7 +253,7 @@ export default function SellerDashboardPage() {
 
       {/* 📌 Orders Tracking */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Orders</h2>
+        <h2 className="text-2xl font-semibold mb-4">Manage Orders</h2>
         {orders.length === 0 ? (
           <p>No orders placed.</p>
         ) : (
@@ -237,6 +272,7 @@ export default function SellerDashboardPage() {
                   <td>{order.shipStatus}</td>
                   <td>
                     <Button onClick={() => updateShipStatus(order.id, 'shipped')}>Set Shipped</Button>
+                    <Button onClick={() => updateReturnStatus(order.id)} variant="outline">Set Returned</Button>
                   </td>
                 </tr>
               ))}
