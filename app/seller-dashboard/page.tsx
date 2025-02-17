@@ -8,6 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 
+// *** Added for logout functionality ***
+import { getAuth } from 'firebase/auth'
+import { useToast } from '@/components/ui/use-toast'
+import { LogOut } from 'lucide-react'
+
 export default function SellerDashboardPage() {
   const [books, setBooks] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
@@ -24,6 +29,20 @@ export default function SellerDashboardPage() {
   })
   const [toastMessage, setToastMessage] = useState<string | null>(null) // <-- Toast state
   const router = useRouter()
+
+  // *** Added for logout functionality ***
+  const authInstance = getAuth()
+  const { toast } = useToast()
+
+  // *** Added logout function ***
+  const handleLogout = () => {
+    console.log("Logging out")
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    })
+    router.push("/login")
+  }
 
   // 🔹 Check if user is a seller
   useEffect(() => {
@@ -113,11 +132,10 @@ export default function SellerDashboardPage() {
 
     // 🔹 Validation: Ensure required fields are not empty
     if (!newBook.title.trim() || !newBook.author.trim() || !newBook.price.trim()) {
-      setToastMessage("Title, Author, and Price are required.");
-      setTimeout(() => setToastMessage(null), 3000);
-      return;
+      setToastMessage("Title, Author, and Price are required.")
+      setTimeout(() => setToastMessage(null), 3000)
+      return
     }
-
 
     const bookData = {
       ...newBook,
@@ -191,7 +209,14 @@ export default function SellerDashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Seller Dashboard</h1>
+      {/* *** Added Logout Header *** */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Seller Dashboard</h1>
+        <Button onClick={handleLogout} variant="outline" className="flex items-center">
+          <LogOut className="mr-2 h-4 w-4" /> Logout
+        </Button>
+      </div>
+      {/* *** End Added Logout Header *** */}
 
       {/* 🔹 Toast Notification */}
       {toastMessage && (
@@ -262,7 +287,7 @@ export default function SellerDashboardPage() {
                     variant="destructive"
                     onClick={() => setBookPending(book.id)}
                   >
-                  Remove Book
+                    Remove Book
                   </Button>
                 </td>
               </tr>
