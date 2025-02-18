@@ -8,6 +8,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import Link from 'next/link'
 
+// *** Added for logout functionality ***
+import { getAuth } from 'firebase/auth'
+import { useToast } from '@/components/ui/use-toast'
+import { LogOut } from 'lucide-react'
+
 export default function SellerDashboardPage() {
   const [books, setBooks] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
@@ -22,7 +27,22 @@ export default function SellerDashboardPage() {
     description: '',
     imgUrl: '',
   })
+  const [toastMessage, setToastMessage] = useState<string | null>(null) // <-- Toast state
   const router = useRouter()
+
+  // *** Added for logout functionality ***
+  const authInstance = getAuth()
+  const { toast } = useToast()
+
+  // *** Added logout function ***
+  const handleLogout = () => {
+    console.log("Logging out")
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    })
+    router.push("/login")
+  }
 
   // 🔹 Check if user is a seller
   useEffect(() => {
@@ -68,7 +88,7 @@ export default function SellerDashboardPage() {
       const booksData = booksSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
       // Only show books where orderPlaced === "1" (string)
-      setOrders(booksData.filter((book) => book.orderPlaced === "1"))
+      setOrders(booksData.filter((book) => book.orderPlaced === "1" && book.returnStatus !== "1"))
     } catch (error) {
       console.error('Error fetching orders:', error)
     }
@@ -90,6 +110,17 @@ export default function SellerDashboardPage() {
     }
   }
 
+  const updateReturnStatus = async (bookId: string) => {
+    try {
+      const bookRef = doc(db, 'bookDetails', bookId)
+      await updateDoc(bookRef, { returnStatus: "1" }) // Set returnStatus to "1"
+  
+      fetchOrders() // Refresh orders list
+    } catch (error) {
+      console.error('Error updating return status:', error)
+    }
+  }  
+
   // 🔹 Handle input changes for new book
   const handleInputChange = (e: any) => {
     setNewBook({ ...newBook, [e.target.name]: e.target.value })
@@ -98,6 +129,13 @@ export default function SellerDashboardPage() {
   // 🔹 Handle adding new book to Firestore
   const handleAddBook = async () => {
     if (!sellerData) return
+
+    // 🔹 Validation: Ensure required fields are not empty
+    if (!newBook.title.trim() || !newBook.author.trim() || !newBook.price.trim()) {
+      setToastMessage("Title, Author, and Price are required.")
+      setTimeout(() => setToastMessage(null), 3000)
+      return
+    }
 
     const bookData = {
       ...newBook,
@@ -108,6 +146,7 @@ export default function SellerDashboardPage() {
       cart: '0',
       wishlist: '0',
       shipStatus: 'processing',
+      returnStatus: "0",
       status: 'pending',
       orderPlaced: "0",
     }
@@ -124,6 +163,11 @@ export default function SellerDashboardPage() {
         description: '',
         imgUrl: '',
       })
+
+      // 🔹 Show toast notification (UI only)
+      setToastMessage('Book added successfully! Pending admin approval.')
+      setTimeout(() => setToastMessage(null), 3000)
+
     } catch (error) {
       console.error('Error adding book:', error)
     }
@@ -144,12 +188,42 @@ export default function SellerDashboardPage() {
     }
   }
 
+  const setBookPending = async (bookId: string) => {
+    try {
+      const bookRef = doc(db, 'bookDetails', bookId)
+      await updateDoc(bookRef, { status: "pending" }) // Update status to pending
+  
+      // Update state to reflect the change
+      setBooks((prevBooks) =>
+        prevBooks.map((book) =>
+          book.id === bookId ? { ...book, status: "pending" } : book
+        )
+      )
+    } catch (error) {
+      console.error('Error updating book status:', error)
+    }
+  }  
+
   if (isSeller === null) return <div>Loading...</div>
   if (!isSeller) return <div>Access Denied. You are not a seller.</div>
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Seller Dashboard</h1>
+      {/* *** Added Logout Header *** */}
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Seller Dashboard</h1>
+        <Button onClick={handleLogout} variant="outline" className="flex items-center">
+          <LogOut className="mr-2 h-4 w-4" /> Logout
+        </Button>
+      </div>
+      {/* *** End Added Logout Header *** */}
+
+      {/* 🔹 Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-md z-50">
+          {toastMessage}
+        </div>
+      )}
 
       {/* 📌 Add New Book Form */}
       <section className="mb-8">
@@ -160,9 +234,9 @@ export default function SellerDashboardPage() {
         </div>
         <h2 className="text-2xl font-semibold mb-4">Add New Book</h2>
         <div className="grid grid-cols-2 gap-4">
-          <Input type="text" name="title" value={newBook.title} onChange={handleInputChange} placeholder="Title" />
-          <Input type="text" name="author" value={newBook.author} onChange={handleInputChange} placeholder="Author" />
-          <Input type="number" name="price" value={newBook.price} onChange={handleInputChange} placeholder="Price" />
+          <Input type="text" name="title" value={newBook.title} onChange={handleInputChange} placeholder="Title" required />
+          <Input type="text" name="author" value={newBook.author} onChange={handleInputChange} placeholder="Author" required />
+          <Input type="number" name="price" value={newBook.price} onChange={handleInputChange} placeholder="Price" required />
           <Input type="number" name="stock" value={newBook.stock} onChange={handleInputChange} placeholder="Stock" />
           <Input type="text" name="description" value={newBook.description} onChange={handleInputChange} placeholder="Description" />
           <Input type="text" name="imgUrl" value={newBook.imgUrl} onChange={handleInputChange} placeholder="Image URL" />
@@ -170,7 +244,6 @@ export default function SellerDashboardPage() {
             <option value="in stock">In Stock</option>
             <option value="out of stock">Out of Stock</option>
           </select>
-          {/* <Input type="text" name="imgUrl" value={newBook.imgUrl} onChange={handleInputChange} placeholder="Image URL" /> */}
         </div>
         <Button className="mt-4" onClick={handleAddBook}>Add Book</Button>
       </section>
@@ -209,6 +282,13 @@ export default function SellerDashboardPage() {
                 </td>
                 <td>
                   <Button onClick={() => handleUpdateBook(book.id, book.stock, book.stockStatus)}>Save</Button>
+                  <Button 
+                    className="ml-2" 
+                    variant="destructive"
+                    onClick={() => setBookPending(book.id)}
+                  >
+                    Remove Book
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -218,7 +298,7 @@ export default function SellerDashboardPage() {
 
       {/* 📌 Orders Tracking */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Orders</h2>
+        <h2 className="text-2xl font-semibold mb-4">Manage Orders</h2>
         {orders.length === 0 ? (
           <p>No orders placed.</p>
         ) : (
@@ -237,6 +317,7 @@ export default function SellerDashboardPage() {
                   <td>{order.shipStatus}</td>
                   <td>
                     <Button onClick={() => updateShipStatus(order.id, 'shipped')}>Set Shipped</Button>
+                    <Button onClick={() => updateReturnStatus(order.id)} variant="outline">Set Returned</Button>
                   </td>
                 </tr>
               ))}
