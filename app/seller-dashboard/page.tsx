@@ -28,6 +28,7 @@ export default function SellerDashboardPage() {
     imgUrl: '',
   })
   const [toastMessage, setToastMessage] = useState<string | null>(null) // <-- Toast state
+
   const router = useRouter()
 
   // *** Added for logout functionality ***
@@ -126,21 +127,29 @@ export default function SellerDashboardPage() {
     setNewBook({ ...newBook, [e.target.name]: e.target.value })
   }
 
-  // 🔹 Handle adding new book to Firestore
+  // 🔹 Handle adding new book to Firestore with unified validation
   const handleAddBook = async () => {
     if (!sellerData) return
 
-    // 🔹 Validation: Ensure required fields are not empty
-    if (!newBook.title.trim() || !newBook.author.trim() || !newBook.price.trim()) {
-      setToastMessage("Title, Author, and Price are required.")
+    // Unified validation for required fields and datatype
+    if (
+      !newBook.title.trim() ||
+      !newBook.author.trim() ||
+      newBook.price.trim() === "" ||
+      isNaN(Number(newBook.price))
+    ) {
+      setToastMessage("Invalid input: Title, Author, and Price must be valid.")
       setTimeout(() => setToastMessage(null), 3000)
       return
     }
 
+    // Default stock to 0 if not entered
+    const stockValue = newBook.stock.trim() === "" ? 0 : Number(newBook.stock)
+
     const bookData = {
       ...newBook,
       price: Number(newBook.price),
-      stock: Number(newBook.stock),
+      stock: stockValue,
       seller: sellerData.name,
       sellerId: sellerData.id,
       cart: '0',
@@ -164,7 +173,7 @@ export default function SellerDashboardPage() {
         imgUrl: '',
       })
 
-      // 🔹 Show toast notification (UI only)
+      // Show toast notification (UI only)
       setToastMessage('Book added successfully! Pending admin approval.')
       setTimeout(() => setToastMessage(null), 3000)
 
@@ -209,23 +218,22 @@ export default function SellerDashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* *** Added Logout Header *** */}
+      {/* Added Logout Header */}
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Seller Dashboard</h1>
         <Button onClick={handleLogout} variant="outline" className="flex items-center">
           <LogOut className="mr-2 h-4 w-4" /> Logout
         </Button>
       </div>
-      {/* *** End Added Logout Header *** */}
 
-      {/* 🔹 Toast Notification */}
+      {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-md z-50">
           {toastMessage}
         </div>
       )}
 
-      {/* 📌 Add New Book Form */}
+      {/* Add New Book Form */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-8">
           <Link href="/seller/view-feedback">
@@ -248,7 +256,7 @@ export default function SellerDashboardPage() {
         <Button className="mt-4" onClick={handleAddBook}>Add Book</Button>
       </section>
 
-      {/* 📌 Books List */}
+      {/* Books List */}
       <section className="mb-8">
         <h2 className="text-2xl font-semibold mb-4">My Books</h2>
         <table className="w-full">
@@ -296,7 +304,7 @@ export default function SellerDashboardPage() {
         </table>
       </section>
 
-      {/* 📌 Orders Tracking */}
+      {/* Orders Tracking */}
       <section>
         <h2 className="text-2xl font-semibold mb-4">Manage Orders</h2>
         {orders.length === 0 ? (
