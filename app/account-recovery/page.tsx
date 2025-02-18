@@ -17,6 +17,18 @@ export default function AccountRecoveryPage() {
 
   const handleSubmitEmail = async (e: React.FormEvent) => {
     e.preventDefault();
+  
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a valid email address.',
+        variant: 'destructive',
+      });
+      return;
+    }
+  
     try {
       // Send recovery email via Firebase
       await sendPasswordResetEmail(auth, email);
@@ -24,7 +36,6 @@ export default function AccountRecoveryPage() {
         title: 'Recovery Email Sent',
         description: 'Please check your email for the recovery link.',
       });
-      // After Firebase, users follow the email link to reset their password.
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -33,6 +44,7 @@ export default function AccountRecoveryPage() {
       });
     }
   };
+  
 
   const handleSubmitNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
